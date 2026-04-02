@@ -2,17 +2,26 @@ from stream_command import STREAM
 from  list_command import list_command
 from get_file import GET_FILE
 from create_packets_final import CREATE_PACKETS
+import os
+
+def print_HELP():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print("0. HELP")
+    print("1. get file")
+    print("2. create packets")
+    print("3. stream")
+    print("4. list")
+    print("5. clear chunks")
+    print("6. sestavi podatke")
+    print("7. prikazi podatke")
 
 if __name__ == "__main__":
     chunks = []
+    print_HELP()
     while True:
-        print("1. get file")
-        print("2. create packets")
-        print("3. stream")
-        print("4. list")
-
-        variable = input("chose command 1/2")
-
+        variable = input("chose command :")
+        if variable == "0":
+            print_HELP()
         if variable == "1":
             filename = input("What file would you like to download?")
             GET_FILE(filename)
@@ -21,9 +30,15 @@ if __name__ == "__main__":
             filename = input("What file would you like to transofrm into packets?")
             chunks = CREATE_PACKETS(filename)
             for c in chunks:
+                print(c["id"])
                 print(c["data"])
+                print(c["timestamp"])
+            
         elif variable == "3":
             STREAM()
         
         elif variable == "4":
             list_command()
+
+        elif variable == "5":
+            chunks.clear()
