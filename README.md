@@ -6,7 +6,7 @@ With the use of Artificial Intelligence, the goal of this project is to give it 
 ## 1. Clone repo to local machine
 ```bash
 git clone https://github.com/teodorus12/AISL.git 
-cd AI-OkroglaMiza
+cd AISL
 ```
 
 ## 2. checkout to new branch
