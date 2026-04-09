@@ -2,13 +2,27 @@ import struct
 import numpy as np
 from CRC16 import crc16_compute, crc16_update
 
+
+ALAW_TABLE = np.array([
+     8, 24, 40, 56, 72, 88, 104, 120, 136, 152, 168, 184, 200, 216, 232, 248,
+     264, 280, 296, 312, 328, 344, 360, 376, 392, 408, 424, 440, 456, 472, 488, 504,
+     528, 560, 592, 624, 656, 688, 720, 752, 784, 816, 848, 880, 912, 944, 976, 1008,
+     1056, 1120, 1184, 1248, 1312, 1376, 1440, 1504, 1568, 1632, 1696, 1760, 1824, 1888,
+     1952, 2016, 2112, 2240, 2368, 2496, 2624, 2752, 2880, 3008, 3136, 3264, 3392, 3520,
+     3648, 3776, 3904, 4032, 4224, 4480, 4736, 4992, 5248, 5504, 5760, 6016, 6272, 6528,
+     6784, 7040, 7296, 7552, 7808, 8064, 8448, 8960, 9472, 9984, 10496, 11008, 11520, 12032,
+     12544, 13056, 13568, 14080, 14592, 15104, 15616, 16128, 16896, 17920, 18944, 19968, 20992,
+     22016, 23040, 24064, 25088, 26112, 27136, 28160, 29184, 30208, 31232, 32256
+], dtype=np.int16)
+
+
 def unstuff_bytes(stuffed):
     decoded = bytearray()
     i = 0
     while i < len(stuffed):
         if stuffed[i] == 0xFE:
             if i + 1 >= len(stuffed):
-                print(f"Warning: 0xFE at end of payload, skipping")
+                print("Warning: 0xFE at end of payload, skipping")
                 break
             decoded.append(0xFE ^ stuffed[i+1])
             i += 2
@@ -16,6 +30,7 @@ def unstuff_bytes(stuffed):
             decoded.append(stuffed[i])
             i += 1
     return decoded
+
 
 def CREATE_PACKETS(file_path):
     with open(file_path, "rb") as f:
@@ -41,22 +56,24 @@ def CREATE_PACKETS(file_path):
         else:
             i += 1
     chunks = []
+
     for payload in packets:
         packet_counter = payload[0]
-        packet_data = payload[1:] 
+        packet_data = payload[1:]
+
         timestamp = struct.unpack_from("<I", packet_data, 0)[0]
         packet_size = struct.unpack_from("<H", packet_data, 4)[0] + 1
-        chunks_data = packet_data[6:-2] 
+        chunks_data = packet_data[6:-2]
 
         crc_received = struct.unpack_from("<H", packet_data, len(packet_data)-2)[0]
         crc_calculated = crc16_compute(packet_data[:-2])
         crc_ok = crc_calculated == crc_received
-        
 
         if crc_ok:
             pos = 0
             while pos + 4 <= len(chunks_data):
                 chunk_id = chunks_data[pos]
+
                 if chunk_id == 4:
                     if pos + 3 >= len(chunks_data):
                         print(f"Warning: incomplete chunk header at pos {pos}")
@@ -66,26 +83,32 @@ def CREATE_PACKETS(file_path):
                     reserved = chunks_data[pos+3]
 
                     if pos + 4 + chunk_size > len(chunks_data):
-                        #print(f"Warning: incomplete chunk_data at pos {pos}")
                         break
 
                     signal = chunks_data[pos+4:pos+4+chunk_size]
 
                     if len(signal) % 2 != 0:
-                        #print(f"Warning: odd-length signal for uint16 at chunk {chunk_id}")
                         signal = signal[:-1]
 
                     data_array = np.frombuffer(signal, dtype=np.int8).reshape(-1, 1)
+                    
+                    sign = np.sign(data_array)
+                    ipos = np.abs(data_array).astype(np.uint8)
+                    decoded = ALAW_TABLE[ipos]
+                    decoded = (decoded * sign).astype(np.int16)
+
                     chunks.append({
                         "timestamp": timestamp,
-                        "data": data_array
+                        "data": decoded
                     })
 
                     pos += 4 + chunk_size
+                else:
+                    pos += 1
 
     return chunks
 
 
 
-    
-   
+
+
