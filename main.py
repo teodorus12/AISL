@@ -14,6 +14,7 @@ def print_HELP():
     print("5. clear chunks")
     print("6. sestavi podatke")
     print("7. prikazi podatke")
+    print("8. EXIT")
 
 if __name__ == "__main__":
     chunks = []
@@ -42,3 +43,14 @@ if __name__ == "__main__":
 
         elif variable == "5":
             chunks.clear()
+            
+        elif variable == "6":
+            print("Not Implemented")
+            input("Press any key to continue...")
+            
+        elif variable == "7":
+            print("Not Implemented")
+            input("Press any key to continue...")
+            
+        elif variable == "8":
+            break
