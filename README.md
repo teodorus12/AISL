@@ -1,52 +1,109 @@
-# AISL
-With the use of Artificial Intelligence, the goal of this project is to give it the capability to "read" sign language through video and make it show pictures of ASL gestures that the user said into their microphone.
+# AISL — AI Sign Language Interpreter
 
-#How to contribute
+AISL (Artificial Intelligence Sign Language) is a project that uses AI to:
+-  Interpret **sign language from video input**
+-  Convert **spoken words into ASL gesture images**
 
-## 1. Clone repo to local machine
+The goal is to bridge communication by combining computer vision and speech processing.
+
+---
+
+##  Getting Started
+
+### 1. Clone the repository
 ```bash
-git clone https://github.com/teodorus12/AISL.git 
+git clone https://github.com/teodorus12/AISL.git
 cd AISL
 ```
 
-## 2. checkout to new branch
+### 2. Switch to the development branch
 ```bash
 git checkout dev
 git pull
 ```
 
-## 3. Create new feature branch where you can implimente your own features
+### 3. Create a feature branch
+Use a clear naming convention:
 ```bash
-git checkout -b feature/ID-description
-git push -u origin feature/ID-description
+git checkout -b feature/<ID>-<short-description>
+git push -u origin feature/<ID>-<short-description>
 ```
 
-## 4. commit your changes
+### 4. Commit and push your changes
 ```bash
 git add .
-git commit -m "feature description"
+git commit -m "feat: short description of changes"
 git push
 ```
-#How to connect
 
-## 1. connect STM32 with USB micro and USB mini
-both need to have data transfer
+---
 
-## 2. donwload putty (not needed but recomended)
-### 2.1 link
--download link: https://putty.org/index.html
+##  Contributing Guidelines
 
-### 2.2 configure putty
--serial line COM5 (variable)
--speed 9600
--connection type: serial
--Under logging "all sesion output"
--Under terminal local echo "force on"
+- Keep commits small and focused  
+- Use clear commit messages (`feat:`, `fix:`, `docs:`)  
+- Always branch from `dev`  
+- Open a Pull Request when your feature is ready  
 
-lastly save the sesion or you will need to do this every time
+---
 
-#How to test if connection works
+## 🔌 Hardware Setup
 
-##1. Open putty
-##2. run "STREAM"
--if you see a stream of data it works
+### STM32 Connection
+- Connect using:
+  - **USB Micro**
+  - **USB Mini**
+- Both cables must support **data transfer** (not just charging)
+
+---
+
+##  Serial Monitoring (PuTTY)
+
+PuTTY is optional but recommended for debugging and monitoring.
+
+### Download
+https://putty.org
+
+### Configuration
+
+| Setting            | Value          |
+|--------------------|---------------|
+| Serial line        | COM5 (varies) |
+| Speed (baud rate)  | 9600          |
+| Connection type    | Serial        |
+
+### Additional Settings
+- **Logging** → All session output  
+- **Terminal** → Local echo → Force on  
+
+Save the session to avoid repeating setup.
+
+---
+
+## Testing the Connection
+
+1. Open PuTTY  
+2. Start the serial connection  
+3. Run the command:
+```bash
+STREAM
+```
+
+ If you see a continuous stream of data, the connection is working.
+
+---
+
+##  Project Goals
+
+- Real-time sign language recognition  
+- Speech-to-ASL visual mapping  
+- Accessible communication tools  
+
+---
+
+##  Future Improvements
+
+- Expand ASL dataset  
+- Improve model accuracy  
+- Add real-time UI feedback  
+- Cross-platform support  
