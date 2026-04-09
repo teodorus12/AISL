@@ -30,14 +30,7 @@ def list_command():
         if not data:
             break
 
-        # Option 1: raw bytes
         print(data)
-
-        # Option 2 (cleaner): hex format
-        # print(data.hex())
-
-        # Option 3 (if it's text):
-        # print(data.decode(errors="ignore"), end="")
 
     print("Prenos končan")
 
