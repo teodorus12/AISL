@@ -2,6 +2,7 @@ from stream_command import STREAM
 from  list_command import list_command
 from get_file import GET_FILE
 from create_packets_final import CREATE_PACKETS
+from create_file import save_chunks_to_file
 import os
 
 def print_HELP():
@@ -31,9 +32,13 @@ if __name__ == "__main__":
             filename = input("What file would you like to transofrm into packets?")
             chunks = CREATE_PACKETS(filename)
             for c in chunks:
-                print(c["id"])
+                #print(c["id"])
                 print(c["data"])
                 print(c["timestamp"])
+            
+            
+            save_chunks_to_file(chunks)
+            print("Chunks saved to packets.txt")
             
         elif variable == "3":
             STREAM()
