@@ -1,37 +1,55 @@
 import serial
 import time
 
+from errors import SerialConnectionError, TransferError
+
 def list_command():
-    ser = serial.Serial('COM5', 9600, timeout=4)
-    time.sleep(2)
+    try:
+        with serial.Serial('COM5', 9600, timeout=4) as ser:
+            time.sleep(2)
 
-    command = "LIST" + '\n'
-    print(command)
+            command = "LIST" + '\n'
+            print(command)
 
-    max_retries = 4
-    attempt = 0
+            max_retries = 4
+            attempt = 0
 
-    while attempt < max_retries:
-        ser.write(command.encode())
-        print("Ukaz poslan, poskus:", attempt + 1)
+            while attempt < max_retries:
+                ser.write(command.encode())
+                print("Ukaz poslan, poskus:", attempt + 1)
 
-        response = ser.readline().decode(errors="ignore").strip()
-        print("Odgovor:", response)
+                response = ser.readline().decode(errors="ignore").strip()
+                print("Odgovor:", response)
 
-        if "ERROR: Unknown command" not in response:
-            break
+                if "ERROR: Unknown command" not in response:
+                    break
 
-        attempt += 1
-        time.sleep(2)
+                attempt += 1
+                time.sleep(2)
 
-    # Print incoming data instead of saving to file
-    while True:
-        data = ser.read(1024)
-        if not data:
-            break
+            if attempt >= max_retries:
+                raise TransferError("Device did not accept LIST command (unknown command).")
 
-        print(data)
+            read_any = False
+            # Print incoming data instead of saving to file
+            while True:
+                data = ser.read(1024)
+                if not data:
+                    break
+                read_any = True
 
-    print("Prenos končan")
+                # Option 1: raw bytes
+                print(data)
 
-    ser.close()
+                # Option 2 (cleaner): hex format
+                # print(data.hex())
+
+                # Option 3 (if it's text):
+                # print(data.decode(errors="ignore"), end="")
+
+            if not read_any:
+                raise TransferError("No data received (timeout).")
+
+            print("Prenos končan")
+    except serial.SerialException as e:
+        raise SerialConnectionError(f"Failed to open serial port COM5: {e}") from e
