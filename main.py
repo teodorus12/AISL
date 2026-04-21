@@ -3,6 +3,8 @@ from  list_command import list_command
 from get_file import GET_FILE
 from create_packets_final import CREATE_PACKETS
 from create_file import save_chunks_to_file
+from Signal_decode import sestavi_podatke
+from Signal_decode import prikazi_signal
 import os
 
 def print_HELP():
@@ -19,6 +21,8 @@ def print_HELP():
 
 if __name__ == "__main__":
     chunks = []
+    Fvz = 0
+    signal = []
     print_HELP()
     while True:
         variable = input("chose command :")
@@ -36,9 +40,9 @@ if __name__ == "__main__":
                 print(c["data"])
                 print(c["timestamp"])
             
-            
             save_chunks_to_file(chunks)
             print("Chunks saved to packets.txt")
+            
             
         elif variable == "3":
             STREAM()
@@ -50,11 +54,20 @@ if __name__ == "__main__":
             chunks.clear()
             
         elif variable == "6":
-            print("Not Implemented")
+            Fvz, signal = sestavi_podatke("packets.txt")
             input("Press any key to continue...")
             
         elif variable == "7":
-            print("Not Implemented")
+            prikazi_signal(
+                signal, naslov =
+                f"Signal z frekvenco {Fvz:.3f}Hz"
+            )
+            prikazi_signal(
+                signal, naslov =
+                f"Signal z frekvenco {Fvz:.3f}Hz",
+                startInd=1000,
+                endInd= int(Fvz * 200) + 100
+            )
             input("Press any key to continue...")
             
         elif variable == "8":
