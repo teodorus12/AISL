@@ -62,7 +62,7 @@ def CREATE_PACKETS(file_path):
         packet_data = payload[1:]
 
         timestamp = struct.unpack_from("<I", packet_data, 0)[0]
-        packet_size = struct.unpack_from("<H", packet_data, 4)[0] + 1
+        _packet_size = struct.unpack_from("<H", packet_data, 4)[0] + 1
         chunks_data = packet_data[6:-2]
 
         crc_received = struct.unpack_from("<H", packet_data, len(packet_data)-2)[0]
@@ -70,37 +70,54 @@ def CREATE_PACKETS(file_path):
         crc_ok = crc_calculated == crc_received
 
         if crc_ok:
+            ts_sec = float(timestamp) / 1000.0
             pos = 0
             while pos + 4 <= len(chunks_data):
                 chunk_id = chunks_data[pos]
 
-                if chunk_id == 4:
-                    if pos + 3 >= len(chunks_data):
-                        print(f"Warning: incomplete chunk header at pos {pos}")
-                        break
+                if pos + 3 >= len(chunks_data):
+                    print(f"Warning: incomplete chunk header at pos {pos}")
+                    break
 
-                    chunk_size = struct.unpack_from("<H", chunks_data, pos+1)[0] + 1
-                    reserved = chunks_data[pos+3]
+                chunk_size = struct.unpack_from("<H", chunks_data, pos + 1)[0] + 1
+                _reserved = chunks_data[pos + 3]
 
-                    if pos + 4 + chunk_size > len(chunks_data):
-                        break
+                if pos + 4 + chunk_size > len(chunks_data):
+                    break
 
-                    signal = chunks_data[pos+4:pos+4+chunk_size]
+                signal = chunks_data[pos + 4 : pos + 4 + chunk_size]
 
+                # chunk_id 1–3: int16 XYZ ACC/GYRO/MAG 
+                if chunk_id in (1, 2, 3):
+                    if len(signal) % 2 != 0:
+                        signal = signal[:-1]
+                    data_array = np.frombuffer(bytes(signal), dtype="<i2").copy()
+                    chunks.append(
+                        {
+                            "id": chunk_id,
+                            "ts": ts_sec,
+                            "data": data_array,
+                        }
+                    )
+                    pos += 4 + chunk_size
+                elif chunk_id == 4:
                     if len(signal) % 2 != 0:
                         signal = signal[:-1]
 
                     data_array = np.frombuffer(signal, dtype=np.int8).reshape(-1, 1)
-                    
+
                     sign = np.sign(data_array)
                     ipos = np.abs(data_array).astype(np.uint8)
                     decoded = ALAW_TABLE[ipos]
                     decoded = (decoded * sign).astype(np.int16)
 
-                    chunks.append({
-                        "timestamp": timestamp,
-                        "data": decoded
-                    })
+                    chunks.append(
+                        {
+                            "id": 4,
+                            "ts": ts_sec,
+                            "data": decoded,
+                        }
+                    )
 
                     pos += 4 + chunk_size
                 else:
