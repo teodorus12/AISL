@@ -7,6 +7,7 @@ from create_packets_final import CREATE_PACKETS
 from convert_bin_to_wav import collect_inputs, convert_file
 from Signal_decode import sestavi_podatke
 from convert_all_in_cwd import convert_all_bin_in_cwd, WAV_OUTPUT_DIR
+from category_wav import download_bin_and_convert_by_category
 import os
 
 from errors import AISLError, SerialConnectionError, TransferError, UserInputError
@@ -25,6 +26,7 @@ def print_HELP():
     print("7. prikazi podatke")
     print(f"8. pretvori vse BIN v WAV (izhod: {WAV_OUTPUT_DIR}/)")
     print("9. EXIT")
+    print("10. prenesi BIN in pretvori v WAV po kategoriji (kava, pivo, caj, sok, viski)")
 
 if __name__ == "__main__":
     chunks = []
@@ -76,8 +78,11 @@ if __name__ == "__main__":
             elif variable == "9":
                 break
 
+            elif variable == "10":
+                download_bin_and_convert_by_category()
+
             else:
-                raise UserInputError(f"Unknown command '{variable}'. Choose 0-9.")
+                raise UserInputError(f"Unknown command '{variable}'. Choose 0-10.")
                 
         except UserInputError as e:
             print(f"Input error: {e}")

@@ -30,7 +30,12 @@ def estimate_sample_rate(audio_packets: list[dict]) -> float:
     return float(np.mean(samples_per_packet) / np.mean(deltas))
 
 
-def convert_file(bin_path: Path, output_dir: Path, sample_rate: int | None) -> Path:
+def convert_file(
+    bin_path: Path,
+    output_dir: Path,
+    sample_rate: int | None,
+    output_stem: str | None = None,
+) -> Path:
     bin_path = bin_path.resolve()
 
     packets = CREATE_PACKETS(str(bin_path))
@@ -55,7 +60,8 @@ def convert_file(bin_path: Path, output_dir: Path, sample_rate: int | None) -> P
         wav_sr = DEFAULT_SAMPLE_RATE
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    out_path = output_dir / f"{bin_path.stem}.wav"
+    stem = output_stem if output_stem is not None else bin_path.stem
+    out_path = output_dir / f"{stem}.wav"
 
     with wave.open(str(out_path), "wb") as wav_file:
         wav_file.setnchannels(1)
