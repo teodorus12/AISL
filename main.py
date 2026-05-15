@@ -23,8 +23,8 @@ def print_HELP():
     print("5. clear chunks")
     print("6. sestavi podatke")
     print("7. prikazi podatke")
-    print("8. EXIT")
-    print(f"9. pretvori vse BIN v WAV (izhod: {WAV_OUTPUT_DIR}/)")
+    print(f"8. pretvori vse BIN v WAV (izhod: {WAV_OUTPUT_DIR}/)")
+    print("9. EXIT")
 
 def convert_all_bin_in_cwd() -> None:
     bin_files = collect_inputs(["."])
@@ -82,7 +82,6 @@ if __name__ == "__main__":
                 
             elif variable == "6":
                 Fvz, signal = sestavi_podatke("packets.txt")
-                input("Press any key to continue...")
                 
             elif variable == "7":
                 prikazi_signal(
@@ -95,9 +94,10 @@ if __name__ == "__main__":
                     startInd=1000,
                     endInd= int(Fvz * 200) + 100
                 )
-                input("Press any key to continue...")
-                
             elif variable == "8":
+                convert_all_bin_in_cwd()
+                
+            elif variable == "9":
                 break
             else:
                 raise UserInputError(f"Unknown command '{variable}'. Choose 0-9.")
