@@ -1,3 +1,4 @@
+import os
 import serial
 import time
 import sys
@@ -9,6 +10,11 @@ def GET_FILE(file_name):
         raise UserInputError("Filename must be a non-empty string.")
 
     file_name = file_name.strip()
+
+    bin_folder = "bin_folder"
+    os.makedirs(bin_folder, exist_ok=True)
+
+    output_path = os.path.join(bin_folder, file_name)
 
     try:
         with serial.Serial('COM5', 9600, timeout=4) as ser:
@@ -36,7 +42,7 @@ def GET_FILE(file_name):
 
             wrote_any = False
             try:
-                with open(file_name, "wb") as f:
+                with open(output_path, "wb") as f:
                     while True:
                         data = ser.read(1024)
                         if not data:
@@ -44,7 +50,7 @@ def GET_FILE(file_name):
                         wrote_any = True
                         f.write(data)
             except OSError as e:
-                raise TransferError(f"Failed to write output file '{file_name}': {e}") from e
+                raise TransferError(f"Failed to write output file '{output_path}': {e}") from e
 
             if not wrote_any:
                 raise TransferError("No data received (timeout).")

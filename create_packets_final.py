@@ -1,7 +1,7 @@
 import struct
 import numpy as np
+import os
 from CRC16 import crc16_compute, crc16_update
-
 
 ALAW_TABLE = np.array([
      8, 24, 40, 56, 72, 88, 104, 120, 136, 152, 168, 184, 200, 216, 232, 248,
@@ -22,9 +22,8 @@ def unstuff_bytes(stuffed):
     while i < len(stuffed):
         if stuffed[i] == 0xFE:
             if i + 1 >= len(stuffed):
-                print("Warning: 0xFE at end of payload, skipping")
                 break
-            decoded.append(0xFE ^ stuffed[i+1])
+            decoded.append(0xFE ^ stuffed[i + 1])
             i += 2
         else:
             decoded.append(stuffed[i])
@@ -33,6 +32,8 @@ def unstuff_bytes(stuffed):
 
 
 def CREATE_PACKETS(file_path):
+    file_path = os.path.join("bin_folder", file_path)
+
     with open(file_path, "rb") as f:
         data = f.read()
 
@@ -40,92 +41,104 @@ def CREATE_PACKETS(file_path):
     i = 0
 
     while i < len(data) - 1:
-        if data[i] == 0xFF and data[i+1] == 0xFF:
-            i += 2 
+        if data[i] == 0xFF and data[i + 1] == 0xFF:
+            i += 2
 
             packet_counter = data[i]
             i += 1
 
             chunk = bytearray()
-            while i < len(data) - 1 and not (data[i] == 0xFF and data[i+1] == 0xFF):
+
+            while i < len(data) - 1 and not (data[i] == 0xFF and data[i + 1] == 0xFF):
                 chunk.append(data[i])
                 i += 1
+
             payload = unstuff_bytes(chunk)
             payload = bytearray([packet_counter]) + payload
             packets.append(payload)
         else:
             i += 1
+
     chunks = []
 
     for payload in packets:
+        if len(payload) < 6:
+            continue
+
         packet_counter = payload[0]
         packet_data = payload[1:]
+
+        if len(packet_data) < 6:
+            continue
 
         timestamp = struct.unpack_from("<I", packet_data, 0)[0]
         _packet_size = struct.unpack_from("<H", packet_data, 4)[0] + 1
         chunks_data = packet_data[6:-2]
 
-        crc_received = struct.unpack_from("<H", packet_data, len(packet_data)-2)[0]
+        if len(packet_data) < 2:
+            continue
+
+        crc_received = struct.unpack_from("<H", packet_data, len(packet_data) - 2)[0]
         crc_calculated = crc16_compute(packet_data[:-2])
-        crc_ok = crc_calculated == crc_received
 
-        if crc_ok:
-            ts_sec = float(timestamp) / 1000.0
-            pos = 0
-            while pos + 4 <= len(chunks_data):
-                chunk_id = chunks_data[pos]
+        if crc_calculated != crc_received:
+            continue
 
-                if pos + 3 >= len(chunks_data):
-                    print(f"Warning: incomplete chunk header at pos {pos}")
-                    break
+        ts_sec = float(timestamp) / 1000.0
+        pos = 0
 
-                chunk_size = struct.unpack_from("<H", chunks_data, pos + 1)[0] + 1
-                _reserved = chunks_data[pos + 3]
+        while pos + 4 <= len(chunks_data):
+            chunk_id = chunks_data[pos]
 
-                if pos + 4 + chunk_size > len(chunks_data):
-                    break
+            if pos + 3 >= len(chunks_data):
+                break
 
-                signal = chunks_data[pos + 4 : pos + 4 + chunk_size]
+            chunk_size = struct.unpack_from("<H", chunks_data, pos + 1)[0] + 1
+            _reserved = chunks_data[pos + 3]
 
-                # chunk_id 1–3: int16 XYZ ACC/GYRO/MAG 
-                if chunk_id in (1, 2, 3):
-                    if len(signal) % 2 != 0:
-                        signal = signal[:-1]
-                    data_array = np.frombuffer(bytes(signal), dtype="<i2").copy()
-                    chunks.append(
-                        {
-                            "id": chunk_id,
-                            "ts": ts_sec,
-                            "data": data_array,
-                        }
-                    )
-                    pos += 4 + chunk_size
-                elif chunk_id == 4:
-                    if len(signal) % 2 != 0:
-                        signal = signal[:-1]
+            if pos + 4 + chunk_size > len(chunks_data):
+                break
 
-                    data_array = np.frombuffer(signal, dtype=np.int8).reshape(-1, 1)
+            signal = chunks_data[pos + 4: pos + 4 + chunk_size]
 
-                    sign = np.sign(data_array)
-                    ipos = np.abs(data_array).astype(np.uint8)
-                    decoded = ALAW_TABLE[ipos]
-                    decoded = (decoded * sign).astype(np.int16)
+            # IMU data (int16)
+            if chunk_id in (1, 2, 3):
+                if len(signal) % 2 != 0:
+                    signal = signal[:-1]
 
-                    chunks.append(
-                        {
-                            "id": 4,
-                            "ts": ts_sec,
-                            "data": decoded,
-                        }
-                    )
+                data_array = np.frombuffer(bytes(signal), dtype="<i2").copy()
 
-                    pos += 4 + chunk_size
-                else:
-                    pos += 1
+                chunks.append({
+                    "id": chunk_id,
+                    "ts": ts_sec,
+                    "data": data_array,
+                })
+
+                pos += 4 + chunk_size
+
+            # A-law audio
+            elif chunk_id == 4:
+                if len(signal) % 2 != 0:
+                    signal = signal[:-1]
+
+                data_array = np.frombuffer(signal, dtype=np.int8).reshape(-1, 1)
+
+                sign = np.sign(data_array)
+                ipos = np.abs(data_array).astype(np.uint8)
+
+                ipos = np.clip(ipos, 0, 127)
+
+                decoded = ALAW_TABLE[ipos]
+                decoded = (decoded * sign).astype(np.int16)
+
+                chunks.append({
+                    "id": 4,
+                    "ts": ts_sec,
+                    "data": decoded,
+                })
+
+                pos += 4 + chunk_size
+            else:
+                pos += 1
 
     return chunks
-
-
-
-
-
