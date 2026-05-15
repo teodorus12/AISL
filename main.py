@@ -1,17 +1,17 @@
-from pathlib import Path
-
 from stream_command import STREAM
+from create_file import save_chunks_to_file
+from Signal_decode import prikazi_signal
 from list_command import list_command
 from get_file import GET_FILE
 from create_packets_final import CREATE_PACKETS
-from create_file import save_chunks_to_file
+from convert_bin_to_wav import collect_inputs, convert_file
 from Signal_decode import sestavi_podatke
-from Signal_decode import prikazi_signal
+from convert_all_in_cwd import convert_all_bin_in_cwd, WAV_OUTPUT_DIR
 import os
 
 from errors import AISLError, SerialConnectionError, TransferError, UserInputError
 
-WAV_OUTPUT_DIR = "wav_out"
+
 
 def print_HELP():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -26,26 +26,6 @@ def print_HELP():
     print(f"8. pretvori vse BIN v WAV (izhod: {WAV_OUTPUT_DIR}/)")
     print("9. EXIT")
 
-def convert_all_bin_in_cwd() -> None:
-    bin_files = collect_inputs(["."])
-    if not bin_files:
-        print("Ni BIN datotek v trenutni mapi.")
-        return
-
-    output_dir = Path(WAV_OUTPUT_DIR)
-    failures = 0
-    for bin_file in bin_files:
-        try:
-            convert_file(bin_file, output_dir, sample_rate=None)
-        except Exception as exc:
-            failures += 1
-            print(f"[ERR] {bin_file.name}: {exc}")
-
-    if failures:
-        print(f"Končano z {failures} napako/ami.")
-    else:
-        print(f"Vse BIN datoteke pretvorjene v {output_dir.resolve()}/")
-
 if __name__ == "__main__":
     chunks = []
     Fvz = 0
@@ -59,17 +39,12 @@ if __name__ == "__main__":
             elif variable == "1":
                 filename = input("What file would you like to download?")
                 GET_FILE(filename)
+
             elif variable == "2":
                 filename = input("What file would you like to transofrm into packets?")
                 chunks = CREATE_PACKETS(filename)
-                for c in chunks:
-                    #print(c["id"])
-                    print(c["data"])
-                    print(c["timestamp"])
-                
                 save_chunks_to_file(chunks)
                 print("Chunks saved to packets.txt")
-            
             
             elif variable == "3":
                 STREAM()
@@ -94,13 +69,16 @@ if __name__ == "__main__":
                     startInd=1000,
                     endInd= int(Fvz * 200) + 100
                 )
+
             elif variable == "8":
                 convert_all_bin_in_cwd()
                 
             elif variable == "9":
                 break
+
             else:
                 raise UserInputError(f"Unknown command '{variable}'. Choose 0-9.")
+                
         except UserInputError as e:
             print(f"Input error: {e}")
         except SerialConnectionError as e:
