@@ -4,7 +4,9 @@ from stream_command import STREAM
 from list_command import list_command
 from get_file import GET_FILE
 from create_packets_final import CREATE_PACKETS
-from convert_bin_to_wav import collect_inputs, convert_file
+from create_file import save_chunks_to_file
+from Signal_decode import sestavi_podatke
+from Signal_decode import prikazi_signal
 import os
 
 from errors import AISLError, SerialConnectionError, TransferError, UserInputError
@@ -46,6 +48,8 @@ def convert_all_bin_in_cwd() -> None:
 
 if __name__ == "__main__":
     chunks = []
+    Fvz = 0
+    signal = []
     print_HELP()
     while True:
         variable = input("chose command :")
@@ -55,36 +59,44 @@ if __name__ == "__main__":
             elif variable == "1":
                 filename = input("What file would you like to download?")
                 GET_FILE(filename)
-
             elif variable == "2":
                 filename = input("What file would you like to transofrm into packets?")
-                if not isinstance(filename, str) or not filename.strip():
-                    raise UserInputError("Filename must be a non-empty string.")
-                chunks = CREATE_PACKETS(filename.strip())
+                chunks = CREATE_PACKETS(filename)
                 for c in chunks:
-                    print(c.get("id"), c.get("ts"), c.get("data"))
-
+                    #print(c["id"])
+                    print(c["data"])
+                    print(c["timestamp"])
+                
+                save_chunks_to_file(chunks)
+                print("Chunks saved to packets.txt")
+            
+            
             elif variable == "3":
                 STREAM()
-
+            
             elif variable == "4":
                 list_command()
 
             elif variable == "5":
                 chunks.clear()
-
+                
             elif variable == "6":
-                print("Not Implemented")
+                Fvz, signal = sestavi_podatke("packets.txt")
                 input("Press any key to continue...")
-
+                
             elif variable == "7":
-                print("Not Implemented")
+                prikazi_signal(
+                    signal, naslov =
+                    f"Signal z frekvenco {Fvz:.3f}Hz"
+                )
+                prikazi_signal(
+                    signal, naslov =
+                    f"Signal z frekvenco {Fvz:.3f}Hz",
+                    startInd=1000,
+                    endInd= int(Fvz * 200) + 100
+                )
                 input("Press any key to continue...")
-
-            elif variable == "9":
-                convert_all_bin_in_cwd()
-                input("Press any key to continue...")
-
+                
             elif variable == "8":
                 break
             else:
