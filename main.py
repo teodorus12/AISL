@@ -25,8 +25,8 @@ def print_HELP():
     print("6. sestavi podatke")
     print("7. prikazi podatke")
     print(f"8. pretvori vse BIN v WAV (izhod: {WAV_OUTPUT_DIR}/)")
-    print("9. EXIT")
-    print("10. prenesi BIN in pretvori v WAV po kategoriji (kava, pivo, caj, sok, viski)")
+    print("9. prenesi BIN in pretvori v WAV po kategoriji (kava, pivo, caj, sok, viski)")
+    print("10. EXIT")
 
 if __name__ == "__main__":
     chunks = []
@@ -76,10 +76,10 @@ if __name__ == "__main__":
                 convert_all_bin_in_cwd()
                 
             elif variable == "9":
-                break
+                download_bin_and_convert_by_category()
 
             elif variable == "10":
-                download_bin_and_convert_by_category()
+                break
 
             else:
                 raise UserInputError(f"Unknown command '{variable}'. Choose 0-10.")
