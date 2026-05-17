@@ -8,6 +8,7 @@ from convert_bin_to_wav import collect_inputs, convert_file
 from Signal_decode import sestavi_podatke
 from convert_all_in_cwd import convert_all_bin_in_cwd, WAV_OUTPUT_DIR
 from category_wav import download_bin_and_convert_by_category
+from sign_videos import recognize_and_play_signs
 import os
 
 from errors import AISLError, SerialConnectionError, TransferError, UserInputError
@@ -26,7 +27,8 @@ def print_HELP():
     print("7. prikazi podatke")
     print(f"8. pretvori vse BIN v WAV (izhod: {WAV_OUTPUT_DIR}/)")
     print("9. EXIT")
-    print("10. prenesi BIN in pretvori v WAV po kategoriji (kava, pivo, caj, sok, viski)")
+    print("10. prenesi BIN in pretvori v WAV")
+    print("11. test - prepoznava glasovnih posnetkov + pretvarjanje v znake")
 
 if __name__ == "__main__":
     chunks = []
@@ -81,8 +83,11 @@ if __name__ == "__main__":
             elif variable == "10":
                 download_bin_and_convert_by_category()
 
+            elif variable == "11":
+                recognize_and_play_signs()
+
             else:
-                raise UserInputError(f"Unknown command '{variable}'. Choose 0-10.")
+                raise UserInputError(f"Unknown command '{variable}'. Choose 0-11.")
                 
         except UserInputError as e:
             print(f"Input error: {e}")
