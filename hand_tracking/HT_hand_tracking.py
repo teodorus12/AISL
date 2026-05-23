@@ -1,9 +1,12 @@
-from HT_camera_handler import CameraHandler
-from HT_handler import HandTracker
-from HT_landmark_drawer import LandMarkDrawer
-from HT_frame_handler import FrameProcessor
+from hand_tracking.HT_camera_handler import CameraHandler
+from hand_tracking.HT_handler import HandTracker
+from hand_tracking.HT_landmark_drawer import LandMarkDrawer
+from hand_tracking.HT_frame_handler import FrameProcessor
 
-from HT_window import MainWindow
+from hand_tracking.HT_window import MainWindow
+'''
+    This class handles the different aspects of communication between camera and then getting the cameras feed and then finally processing the correct image.
+'''
 
 
 class HandTrackingApp:

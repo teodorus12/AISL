@@ -1,6 +1,10 @@
 import mediapipe as mp
 import cv2 as cv2
 
+'''
+    This class uses the landmarks found on ones hand and then imputs their location onto the hand if it exists.
+'''
+
 class LandMarkDrawer:
     vse_povezave = [
         (0,1),(1,2),(2,3),(3,4),

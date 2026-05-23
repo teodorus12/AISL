@@ -1,6 +1,9 @@
 import tkinter as tk
-from HT_video import VPanel
+from hand_tracking.HT_video import VPanel
 
+'''
+    This class creates a window with size 1200x800.
+'''
 
 class MainWindow:
     def __init__(self):
