@@ -8,6 +8,7 @@ from convert_all_in_cwd import convert_all_bin_in_cwd, WAV_OUTPUT_DIR
 from category_wav import download_bin_and_convert_by_category
 from sign_videos import recognize_and_play_signs
 from tests_for_ai import test_audio_ai
+from hand_tracking.HT_main import HT_startup
 
 import os
 from errors import AISLError, SerialConnectionError, TransferError, UserInputError
@@ -24,10 +25,11 @@ def print_HELP():
     print("6. sestavi podatke")
     print("7. prikazi podatke")
     print(f"8. pretvori vse BIN v WAV (izhod: {WAV_OUTPUT_DIR}/)")
-    print("9. EXIT")
-    print("10. prenesi BIN in pretvori v WAV")
-    print("11. test sign recognition")
-    print("12. test audio neural network")
+    print("9. prenesi BIN in pretvori v WAV")
+    print("10. test sign recognition")
+    print("11. test audio neural network")
+    print("12. Start hand tracking software")
+    print("13. EXIT")
 
 
 if __name__ == "__main__":
@@ -66,18 +68,22 @@ if __name__ == "__main__":
             elif variable == "8":
                 convert_all_bin_in_cwd()
 
-            elif variable == "9":
-                break
 
-            elif variable == "10":
+            elif variable == "9":
                 download_bin_and_convert_by_category()
 
-            elif variable == "11":
+            elif variable == "10":
                 recognize_and_play_signs()
 
-            elif variable == "12":
+            elif variable == "11":
                 test_audio_ai()
-
+                
+            elif variable == "12":
+                HT_startup()
+            
+            elif variable == "13":
+                break
+            
             else:
                 raise UserInputError("invalid command")
 
