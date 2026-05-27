@@ -108,7 +108,7 @@ python -m venv .venv
 3. Install dependencies:
 
 ```bash
-pip install numpy pyserial matplotlib librosa opencv-python mediapipe tkinter
+pip install numpy pyserial matplotlib librosa opencv-python mediapipe tkinter PIL
 ```
 
 4. Start the main menu:

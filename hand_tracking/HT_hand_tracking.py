@@ -42,6 +42,7 @@ class HandTrackingApp:
         if len(key) == 1 and key.isalpha():
             self.current_label = key
             print(f"[LABEL - HT] Current label: "f"{self.current_label}")
+            self.window.set_lbl(self.current_label)
 
     def on_space_release(self, event):
         self.recorder.stop_recording()

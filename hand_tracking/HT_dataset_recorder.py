@@ -4,7 +4,7 @@ import os
 
 class DatasetRecorder:
 
-    def __init__(self, out_dir="data/raw"):
+    def __init__(self, out_dir="Handtracking/clips"):
 
         self.out_dir = out_dir
         self.rec = False
