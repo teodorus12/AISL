@@ -1,8 +1,12 @@
-from HT_hand_tracking import HandTrackingApp
+from hand_tracking.HT_hand_tracking import HandTrackingApp
 
-def main():
+'''
+    this file acts as a startup for the hand tracking application
+'''
+
+def HT_startup():
     app = HandTrackingApp()
     app.start()
     
 if __name__ == "__main__":
-    main()
+    HT_startup()

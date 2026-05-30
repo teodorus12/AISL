@@ -3,8 +3,12 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
+'''
+    This class uses the default task for hand tracking provided by mediapipe to to process the image and get the positions of the hand landmarks.
+'''
+
 class HandTracker:
-    def __init__(self, model_path="mediapipe_task_model/hand_landmarker.task"):
+    def __init__(self, model_path="hand_tracking/mediapipe_task_model/hand_landmarker.task"):
 
         base_options = python.BaseOptions(
             model_asset_path=model_path

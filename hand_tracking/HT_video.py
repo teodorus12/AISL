@@ -2,6 +2,10 @@ import tkinter as tkr
 import cv2
 from PIL import Image, ImageTk
 
+'''
+    This class creates a field where the current camera output is displayed.
+'''
+
 class VPanel:
     def __init__(self, root):
         self.label = tkr.Label(root)

@@ -1,5 +1,8 @@
 import cv2
 
+'''
+    This class opens, reads and releases camera footage.
+'''
 
 class CameraHandler:
     def __init__(self, camera_i=0):
