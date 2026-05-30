@@ -3,7 +3,7 @@ import numpy as np
 import audio_recognition as ar
 
 
-MODEL_PATH = "ai4.pkl"
+MODEL_PATH = "ai5.pkl"
 TEST_FOLDER = "testing_data"
 
 

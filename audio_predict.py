@@ -9,7 +9,7 @@ from pathlib import Path
 import librosa
 import numpy as np
 
-DEFAULT_MODEL_PATH = Path("ai4.pkl")
+DEFAULT_MODEL_PATH = Path("ai5.pkl")
 
 _model_cache: tuple[NeuralNetwork, list[str], AudioProcessor] | None = None
 
