@@ -1,4 +1,5 @@
 import cv2
+import platform as pf
 
 '''
     This class opens, reads and releases camera footage.
@@ -10,7 +11,12 @@ class CameraHandler:
         self.cap = None
 
     def open_camera(self):
-        self.cap = cv2.VideoCapture(self.camera_i)
+        os = pf.system()
+        if os == 'Darwin':
+            self.cap = cv2.VideoCapture(self.camera_i, cv2.CAP_AVFOUNDATION)
+        else:
+            self.cap = cv2.VideoCapture(self.camera_i)
+            
 
         if not self.cap.isOpened():
             raise RuntimeError("Could not open camera")
