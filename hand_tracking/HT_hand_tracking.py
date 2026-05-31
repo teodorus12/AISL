@@ -5,6 +5,7 @@ from hand_tracking.HT_frame_handler import FrameProcessor
 from hand_tracking.HT_serializer import Serializer
 from hand_tracking.HT_dataset_recorder import DatasetRecorder
 from hand_tracking.HT_window import MainWindow
+from hand_tracking.HT_ai import SignRecogniser
 
 '''
     This class handles the different aspects of communication between camera and then getting the cameras feed and then finally processing the correct image.
@@ -21,6 +22,7 @@ class HandTrackingApp:
         self.window = MainWindow()
         self.serializer = Serializer()
         self.recorder = DatasetRecorder()
+        self.recogniser = SignRecogniser()
         self.current_label = "A"
         
         self.running = False
@@ -65,19 +67,23 @@ class HandTrackingApp:
 
         succ, frame = self.camera_handler.read_frame()
 
-        
         if succ:
             processed_frame = self.frame_processor.process(frame)
-            detection_rez = (self.hand_tracker.process(frame))
+            detection_rez = self.hand_tracker.process(frame)
             
             if detection_rez.hand_landmarks:
                 hand_landmarks = detection_rez.hand_landmarks[0]
                 f_data = self.serializer.vektor_processor(hand_landmarks)
-                
+
+                label, conf = self.recogniser.predict(f_data)
+                self.window.set_prediction(label, conf)
+
                 self.recorder.add_frame_data(f_data)
-                
+            else:
+                self.recogniser.reset()
+                self.window.set_prediction("—", 0.0)
+
             self.window.update_video(processed_frame)
-            
             
         self.window.after(10, self.update_loop)
 

@@ -1,10 +1,6 @@
 import tkinter as tk
 from hand_tracking.HT_video import VPanel
 
-'''
-    This class creates a window with size 1200x800.
-'''
-
 class MainWindow:
     def __init__(self):
         self.root = tk.Tk()
@@ -18,25 +14,27 @@ class MainWindow:
         self.container.rowconfigure(0, weight=1)
         
         self.left = tk.Frame(self.container)
-        self.left.grid(row=0,column=0,sticky="nsew")
-        
+        self.left.grid(row=0, column=0, sticky="nsew")
         self.video_panel = VPanel(self.left)
         
         self.right = tk.Frame(self.container)
-        self.right.grid(row=0,column=1,sticky="nsew")
+        self.right.grid(row=0, column=1, sticky="nsew")
         self.right.grid_propagate(False)
-        
-        
-        
+
         self.lbl_var = tk.StringVar(value="Trenutni znak: A")
         self.curr_lbl = tk.Label(self.right, textvariable=self.lbl_var).pack(pady=40)
+
+        # ── AI prediction display ──
+        self.pred_var = tk.StringVar(value="AI: —")
+        tk.Label(self.right, textvariable=self.pred_var, font=("Helvetica", 28, "bold")).pack(pady=20)
+
         tk.Label(self.right, text="Oznaka").pack(pady=10)
-        tk.Button(self.right, text="SHUT DOWN - HT",  command=self.destroy).pack(side="bottom", pady=10)
-            
+        tk.Button(self.right, text="SHUT DOWN - HT", command=self.destroy).pack(side="bottom", pady=10)
+
     def set_lbl(self, lbl):
         v = lbl.upper()
         if v:
-            self.lbl_var.set(f"Trenutni znak: {v.upper()}")    
+            self.lbl_var.set(f"Trenutni znak: {v.upper()}")
 
     def update_video(self, frame):
         self.video_panel.update(frame)
@@ -52,3 +50,8 @@ class MainWindow:
 
     def destroy(self):
         self.root.destroy()
+
+    # ── AI prediction display ──
+    def set_prediction(self, label: str, confidence: float):
+        pct = int(confidence * 100)
+        self.pred_var.set(f"AI: {label}  ({pct}%)")
