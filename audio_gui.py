@@ -15,213 +15,158 @@ class App:
         self.root.title("Speech Recognizer")
 
         self.dataset = []
-        self.labels = []
+        self.labels  = []
+        self.nn      = None
+        self.proc    = AudioProcessor()
 
-        self.nn = None
-        self.proc = AudioProcessor()
+        btn_cfg = dict(width=22)
+        tk.Button(root, text="Load Training Data", command=self.load_data,  **btn_cfg).grid(row=0, column=0, columnspan=2, pady=2)
+        tk.Button(root, text="Train",              command=self.train,       **btn_cfg).grid(row=1, column=0, columnspan=2, pady=2)
+        tk.Button(root, text="Test WAV",           command=self.test,        **btn_cfg).grid(row=2, column=0, columnspan=2, pady=2)
+        tk.Button(root, text="Save Model",         command=self.save,        **btn_cfg).grid(row=3, column=0, columnspan=2, pady=2)
+        tk.Button(root, text="Load Model",         command=self.load,        **btn_cfg).grid(row=4, column=0, columnspan=2, pady=2)
 
-        tk.Button(
-            root,
-            text="Load Training Data",
-            command=self.load_data
-        ).grid(row=0, column=0, columnspan=2)
+        params = [
+            ("Hidden neurons (layer 1)", "128"),
+            ("Hidden neurons (layer 2)", "64"),
+            ("Learning rate",            "0.003"),
+            ("LR decay (per epoch)",     "0.995"),
+            ("Dropout rate",             "0.3"),
+            ("Epochs",                   "200"),
+            ("Batch size",               "32"),
+        ]
+        self.entries: dict[str, tk.Entry] = {}
+        for i, (label, default) in enumerate(params):
+            row = 5 + i
+            tk.Label(root, text=label, anchor="w").grid(row=row, column=0, sticky="w", padx=4)
+            e = tk.Entry(root)
+            e.insert(0, default)
+            e.grid(row=row, column=1, padx=4)
+            self.entries[label] = e
 
-        tk.Button(
-            root,
-            text="Train",
-            command=self.train
-        ).grid(row=1, column=0, columnspan=2)
 
-        tk.Button(
-            root,
-            text="Test WAV",
-            command=self.test
-        ).grid(row=2, column=0, columnspan=2)
+    def _get(self, key: str):
+        return self.entries[key].get()
 
-        tk.Button(
-            root,
-            text="Save Model",
-            command=self.save
-        ).grid(row=3, column=0, columnspan=2)
-
-        tk.Button(
-            root,
-            text="Load Model",
-            command=self.load
-        ).grid(row=4, column=0, columnspan=2)
-
-        tk.Label(root, text="Hidden neurons").grid(row=5, column=0)
-
-        self.hidden_entry = tk.Entry(root)
-        self.hidden_entry.insert(0, "64")
-        self.hidden_entry.grid(row=5, column=1)
-
-        tk.Label(root, text="LR").grid(row=6, column=0)
-
-        self.lr_entry = tk.Entry(root)
-        self.lr_entry.insert(0, "0.003")
-        self.lr_entry.grid(row=6, column=1)
-
-        tk.Label(root, text="Epochs").grid(row=7, column=0)
-
-        self.epoch_entry = tk.Entry(root)
-        self.epoch_entry.insert(0, "120")
-        self.epoch_entry.grid(row=7, column=1)
-
-        tk.Label(root, text="Batch size").grid(row=8, column=0)
-
-        self.batch_entry = tk.Entry(root)
-        self.batch_entry.insert(0, "32")
-        self.batch_entry.grid(row=8, column=1)
-
-    def encode(self, label):
+    def _encode(self, label: str) -> np.ndarray:
         y = np.zeros((1, len(self.labels)))
         y[0, self.labels.index(label)] = 1
         return y
 
+
     def load_data(self):
         base = "teaching_data"
-
         self.dataset = []
 
         for label in os.listdir(base):
             folder = os.path.join(base, label)
-
             if not os.path.isdir(folder):
                 continue
-
             for f in os.listdir(folder):
                 if f.endswith(".wav"):
-                    path = os.path.join(folder, f)
-
-                    vec = self.proc.wav_to_vector(path)
-
+                    vec = self.proc.wav_to_vector(os.path.join(folder, f))
                     self.dataset.append((vec[0], label))
 
-        messagebox.showinfo(
-            "Done",
-            f"Loaded {len(self.dataset)} samples"
-        )
+        messagebox.showinfo("Done", f"Loaded {len(self.dataset)} samples")
+
 
     def train(self):
+        if not self.dataset:
+            messagebox.showwarning("No data", "Load training data first.")
+            return
+
         self.labels = sorted(set(l for _, l in self.dataset))
 
         X = np.array([v for v, _ in self.dataset])
+        y = np.array([self._encode(l)[0] for _, l in self.dataset])
 
-        y = np.array([
-            self.encode(l)[0]
-            for _, l in self.dataset
-        ])
+        mean = X.mean(axis=0)
+        std  = X.std(axis=0) + 1e-9
 
-        self.mean = X.mean(axis=0)
-        self.std = X.std(axis=0) + 1e-9
-
-        X = (X - self.mean) / self.std
+        X_norm = (X - mean) / std
 
         self.nn = NeuralNetwork(
-            input_size=X.shape[1],
-            hidden_size=int(self.hidden_entry.get()),
-            output_size=len(self.labels),
-            lr=float(self.lr_entry.get())
+            input_size   = X.shape[1],
+            hidden_size  = int(self._get("Hidden neurons (layer 1)")),
+            hidden_size2 = int(self._get("Hidden neurons (layer 2)")),
+            output_size  = len(self.labels),
+            lr           = float(self._get("Learning rate")),
+            lr_decay     = float(self._get("LR decay (per epoch)")),
+            dropout_rate = float(self._get("Dropout rate")),
         )
-
         self.nn.labels = self.labels
-        self.nn.mean = self.mean
-        self.nn.std = self.std
+        self.nn.mean   = mean
+        self.nn.std    = std
 
-        epochs = int(self.epoch_entry.get())
-        batch_size = int(self.batch_entry.get())
+        epochs     = int(self._get("Epochs"))
+        batch_size = int(self._get("Batch size"))
 
         def loop():
-            n = len(X)
-
-            losses = []
-            accuracies = []
+            n = len(X_norm)
+            losses, accuracies = [], []
 
             for epoch in range(epochs):
                 idx = np.random.permutation(n)
-
-                Xs = X[idx]
-                ys = y[idx]
+                Xs, ys = X_norm[idx], y[idx]
 
                 for i in range(0, n, batch_size):
-                    xb = Xs[i:i + batch_size]
-                    yb = ys[i:i + batch_size]
+                    self.nn.train_step(Xs[i:i+batch_size], ys[i:i+batch_size])
 
-                    self.nn.train_step(xb, yb)
+                self.nn.decay_lr()
 
                 out = self.nn.forward(X)
-
                 loss = self.nn.compute_loss(y, out)
-                acc = self.nn.compute_accuracy(y, out)
-
+                acc  = self.nn.compute_accuracy(y, out)
                 losses.append(loss)
                 accuracies.append(acc)
 
-                print(
-                    f"epoch {epoch} "
-                    f"loss={loss:.4f} "
-                    f"acc={acc:.4f}"
-                )
+                if epoch % 10 == 0 or epoch == epochs - 1:
+                    print(f"epoch {epoch:>4}  loss={loss:.4f}  acc={acc:.4f}  lr={self.nn.lr:.6f}")
 
-            plt.figure()
-            plt.plot(losses)
-            plt.xlabel("Epoch")
-            plt.ylabel("Loss")
-            plt.title("Training Loss")
-            plt.grid(True)
-
-            plt.figure()
-            plt.plot(accuracies)
-            plt.xlabel("Epoch")
-            plt.ylabel("Accuracy")
-            plt.title("Training Accuracy")
-            plt.grid(True)
-
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+            ax1.plot(losses);     ax1.set_title("Loss");     ax1.set_xlabel("Epoch"); ax1.grid(True)
+            ax2.plot(accuracies); ax2.set_title("Accuracy"); ax2.set_xlabel("Epoch"); ax2.grid(True)
+            plt.tight_layout()
             plt.show()
 
-            messagebox.showinfo(
-                "Done",
-                "Training finished"
-            )
+            messagebox.showinfo("Done", f"Training finished  —  final acc: {accuracies[-1]*100:.1f} %")
 
-        threading.Thread(target=loop).start()
+        threading.Thread(target=loop, daemon=True).start()
+
 
     def test(self):
         if self.nn is None:
+            messagebox.showwarning("No model", "Train or load a model first.")
             return
 
-        path = filedialog.askopenfilename()
+        path = filedialog.askopenfilename(filetypes=[("WAV files", "*.wav")])
+        if not path:
+            return
 
-        vec = self.proc.wav_to_vector(path)
+        vec  = self.proc.wav_to_vector(path)
+        out  = self.nn.forward(vec)
+        pred = self.nn.labels[np.argmax(out)]
+        conf = float(np.max(out)) * 100
 
-        vec = (vec - self.nn.mean) / self.nn.std
+        messagebox.showinfo("Result", f"{pred}  ({conf:.1f} % confidence)")
 
-        out = self.nn.forward(vec)
-
-        pred = np.argmax(out)
-
-        messagebox.showinfo(
-            "Result",
-            self.nn.labels[pred]
-        )
 
     def save(self):
-        path = filedialog.asksaveasfilename(
-            defaultextension=".pkl"
-        )
-
-        self.nn.save(path)
+        if self.nn is None:
+            messagebox.showwarning("No model", "Nothing to save.")
+            return
+        path = filedialog.asksaveasfilename(defaultextension=".pkl")
+        if path:
+            self.nn.save(path)
 
     def load(self):
-        path = filedialog.askopenfilename()
-
-        self.nn = NeuralNetwork.load(path)
+        path = filedialog.askopenfilename(filetypes=[("Model files", "*.pkl")])
+        if path:
+            self.nn = NeuralNetwork.load(path)
+            messagebox.showinfo("Loaded", f"Labels: {', '.join(self.nn.labels)}")
 
 
 if __name__ == "__main__":
     root = tk.Tk()
-
     App(root)
-
     root.mainloop()
