@@ -31,22 +31,29 @@ class HandTrackingApp:
     def setup_keybinds(self):
 
         self.window.root.bind("<KeyPress>", self.on_key_press)
-        self.window.root.bind("<KeyRelease-space>", self.on_space_release)
+        self.window.root.bind("<KeyRelease-Return>", self.on_enter_release)
         
     def on_key_press(self, event):
         key = event.keysym.upper()
 
-        if key == "SPACE":
+        if key == "RETURN":
             if not self.recorder.rec:
                 self.recorder.start_recording(self.current_label)
             return
+
+        if key == "SPACE":
+            self.current_label = "SPACE"
+            print(f"[LABEL - HT] Current label: "f"{self.current_label}")
+            self.window.set_lbl(self.current_label)
+            return
+
 
         if len(key) == 1 and key.isalpha():
             self.current_label = key
             print(f"[LABEL - HT] Current label: "f"{self.current_label}")
             self.window.set_lbl(self.current_label)
 
-    def on_space_release(self, event):
+    def on_enter_release(self, event):
         self.recorder.stop_recording()
         
     def start(self):
