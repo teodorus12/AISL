@@ -1,13 +1,14 @@
 import os
 import serial
 import time
-import sys
 
 from errors import SerialConnectionError, TransferError, UserInputError
 
-def GET_FILE(file_name):
+def GET_FILE(file_name: str, port: str | None):
     if not isinstance(file_name, str) or not file_name.strip():
         raise UserInputError("Filename must be a non-empty string.")
+    if not port:
+        raise SerialConnectionError("STM32 is not connected.")
 
     file_name = file_name.strip()
 
@@ -17,7 +18,7 @@ def GET_FILE(file_name):
     output_path = os.path.join(bin_folder, file_name)
 
     try:
-        with serial.Serial('COM5', 9600, timeout=4) as ser:
+        with serial.Serial(port, 9600, timeout=4) as ser:
             time.sleep(2)
 
             command = 'GET ' + file_name + '\n'
@@ -57,4 +58,4 @@ def GET_FILE(file_name):
 
             print("Prenos končan")
     except serial.SerialException as e:
-        raise SerialConnectionError(f"Failed to open serial port COM5: {e}") from e
+        raise SerialConnectionError(f"Failed to open serial port {port}: {e}") from e

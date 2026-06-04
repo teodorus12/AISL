@@ -9,6 +9,7 @@ from category_wav import download_bin_and_convert_by_category
 from sign_videos import recognize_and_play_signs
 from tests_for_ai import test_audio_ai
 from hand_tracking.HT_main import HT_startup
+from stm32_detector import find_stm32_port
 
 import os
 from errors import AISLError, SerialConnectionError, TransferError, UserInputError
@@ -29,7 +30,17 @@ def print_HELP():
     print("10. test sign recognition")
     print("11. test audio neural network")
     print("12. Start hand tracking software")
-    print("13. EXIT")
+    print("13. detect STM32")
+    print("14. EXIT")
+
+
+def print_stm32_status() -> str | None:
+    port = find_stm32_port()
+    if port:
+        print(f"STM32 detected at {port}")
+    else:
+        print("No STM32 detected")
+    return port
 
 
 if __name__ == "__main__":
@@ -43,7 +54,8 @@ if __name__ == "__main__":
                 print_HELP()
 
             elif variable == "1":
-                GET_FILE(input("file: "))
+                port = print_stm32_status()
+                GET_FILE(input("file: "), port)
 
             elif variable == "2":
                 fname = input("file: ")
@@ -51,10 +63,12 @@ if __name__ == "__main__":
                 save_chunks_to_file(chunks)
 
             elif variable == "3":
-                STREAM()
+                port = print_stm32_status()
+                STREAM(port)
 
             elif variable == "4":
-                list_command()
+                port = print_stm32_status()
+                list_command(port)
 
             elif variable == "5":
                 pass
@@ -82,6 +96,9 @@ if __name__ == "__main__":
                 HT_startup()
             
             elif variable == "13":
+                print_stm32_status()
+
+            elif variable == "14":
                 break
             
             else:
