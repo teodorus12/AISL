@@ -27,13 +27,13 @@ class App:
         tk.Button(root, text="Load Model",         command=self.load,        **btn_cfg).grid(row=4, column=0, columnspan=2, pady=2)
 
         params = [
-            ("Hidden neurons (layer 1)", "128"),
-            ("Hidden neurons (layer 2)", "64"),
-            ("Learning rate",            "0.003"),
-            ("LR decay (per epoch)",     "0.995"),
-            ("Dropout rate",             "0.3"),
-            ("Epochs",                   "200"),
-            ("Batch size",               "32"),
+            ("Hidden neurons (layer 1)", "64"),
+            ("Hidden neurons (layer 2)", "32"),
+            ("Learning rate",            "0.001"),
+            ("LR decay (per epoch)",     "0.990"),
+            ("Dropout rate",             "0.45"),
+            ("Epochs",                   "150"),
+            ("Batch size",               "16"),
         ]
         self.entries: dict[str, tk.Entry] = {}
         for i, (label, default) in enumerate(params):
@@ -44,7 +44,6 @@ class App:
             e.grid(row=row, column=1, padx=4)
             self.entries[label] = e
 
-
     def _get(self, key: str):
         return self.entries[key].get()
 
@@ -52,7 +51,6 @@ class App:
         y = np.zeros((1, len(self.labels)))
         y[0, self.labels.index(label)] = 1
         return y
-
 
     def load_data(self):
         base = "teaching_data"
@@ -69,7 +67,6 @@ class App:
 
         messagebox.showinfo("Done", f"Loaded {len(self.dataset)} samples")
 
-
     def train(self):
         if not self.dataset:
             messagebox.showwarning("No data", "Load training data first.")
@@ -82,8 +79,6 @@ class App:
 
         mean = X.mean(axis=0)
         std  = X.std(axis=0) + 1e-9
-
-        X_norm = (X - mean) / std
 
         self.nn = NeuralNetwork(
             input_size   = X.shape[1],
@@ -102,19 +97,19 @@ class App:
         batch_size = int(self._get("Batch size"))
 
         def loop():
-            n = len(X_norm)
+            n = len(X)
             losses, accuracies = [], []
 
             for epoch in range(epochs):
                 idx = np.random.permutation(n)
-                Xs, ys = X_norm[idx], y[idx]
+                Xs, ys = X[idx], y[idx]
 
                 for i in range(0, n, batch_size):
                     self.nn.train_step(Xs[i:i+batch_size], ys[i:i+batch_size])
 
                 self.nn.decay_lr()
 
-                out = self.nn.forward(X)
+                out  = self.nn.forward(X)
                 loss = self.nn.compute_loss(y, out)
                 acc  = self.nn.compute_accuracy(y, out)
                 losses.append(loss)
@@ -133,7 +128,6 @@ class App:
 
         threading.Thread(target=loop, daemon=True).start()
 
-
     def test(self):
         if self.nn is None:
             messagebox.showwarning("No model", "Train or load a model first.")
@@ -149,7 +143,6 @@ class App:
         conf = float(np.max(out)) * 100
 
         messagebox.showinfo("Result", f"{pred}  ({conf:.1f} % confidence)")
-
 
     def save(self):
         if self.nn is None:

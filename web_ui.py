@@ -23,7 +23,15 @@ WEB_HOST = "127.0.0.1"
 WEB_PORT = 8000
 MAX_LOG_LINES = 200
 WORD_SIGNS_DIR = Path("SIGN_WORDS")
+WAV_OUT_DIR = Path("wav_out")
 VIDEO_EXTENSIONS = (".mov", ".mp4", ".avi", ".mkv")
+
+# Auto-predict polling state
+_auto_predict_lock = threading.Lock()
+_auto_predict_active = False
+_auto_predict_thread: threading.Thread | None = None
+_auto_predict_stop = threading.Event()
+_auto_predict_result: dict | None = None
 
 app = Flask(__name__)
 
@@ -360,6 +368,116 @@ def post_command():
 
     ok, message = service_client.send_command(command)
     return jsonify({"ok": ok, "message": message})
+
+
+def _latest_wav_in_out() -> Path | None:
+    """Return the most recently modified WAV file in wav_out/, or None."""
+    if not WAV_OUT_DIR.is_dir():
+        return None
+    wavs = sorted(WAV_OUT_DIR.glob("*.wav"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return wavs[0] if wavs else None
+
+
+def _predict_wav_path(wav_path: Path) -> dict:
+    """Run the audio NN on an absolute WAV path and return a result dict."""
+    nn, proc = load_model()
+    vec = proc.wav_to_vector(wav_path)
+    out = nn.forward(vec)[0]
+    idx = int(np.argmax(out))
+    word = nn.labels[idx]
+    confidence = float(out[idx])
+    word_video = _resolve_word_sign_video(word)
+    letters = word_to_letters(word)
+    videos, missing = resolve_sign_videos(letters)
+    video_urls = [f"/signs/{path.name}" for path in videos]
+    return {
+        "word": word,
+        "confidence": round(confidence, 4),
+        "word_video": word_video,
+        "letters": letters,
+        "videos": video_urls,
+        "missing_letters": missing,
+        "source_file": wav_path.name,
+    }
+
+
+def _auto_predict_loop(stop_event: threading.Event) -> None:
+    """Background loop: watches wav_out/ for new files and runs the NN."""
+    global _auto_predict_result
+    seen_mtime: float | None = None
+
+    while not stop_event.is_set():
+        wav = _latest_wav_in_out()
+        if wav is not None:
+            mtime = wav.stat().st_mtime
+            if mtime != seen_mtime:
+                seen_mtime = mtime
+                try:
+                    result = _predict_wav_path(wav)
+                    with _auto_predict_lock:
+                        _auto_predict_result = {"ok": True, **result}
+                except Exception as e:
+                    with _auto_predict_lock:
+                        _auto_predict_result = {"ok": False, "message": str(e)}
+        stop_event.wait(2.0)   # poll every 2 s
+
+
+@app.post("/api/auto_predict/fetch_and_run")
+def post_auto_predict_fetch_and_run():
+    """GET_LAST from STM32, convert to WAV, run NN, return result immediately."""
+    ok, message = service_client.send_command("GET_LAST", timeout_sec=30.0)
+    if not ok:
+        return jsonify({"ok": False, "message": f"GET_LAST failed: {message}"})
+
+    # Give the converter a moment to write the file, then find the newest wav.
+    time.sleep(0.5)
+    wav = _latest_wav_in_out()
+    if wav is None:
+        return jsonify({"ok": False, "message": "No WAV file found in wav_out/ after transfer."})
+
+    try:
+        result = _predict_wav_path(wav)
+        return jsonify({"ok": True, **result})
+    except Exception as e:
+        return jsonify({"ok": False, "message": str(e)})
+
+
+@app.post("/api/auto_predict/watch")
+def post_auto_predict_watch():
+    """Start background watcher that auto-runs NN whenever a new WAV appears."""
+    global _auto_predict_active, _auto_predict_thread, _auto_predict_stop
+    with _auto_predict_lock:
+        if _auto_predict_active:
+            return jsonify({"ok": True, "message": "Watcher already running."})
+        _auto_predict_stop = threading.Event()
+        _auto_predict_thread = threading.Thread(
+            target=_auto_predict_loop, args=(_auto_predict_stop,), daemon=True
+        )
+        _auto_predict_active = True
+        _auto_predict_thread.start()
+    return jsonify({"ok": True, "message": "Auto-predict watcher started."})
+
+
+@app.post("/api/auto_predict/stop")
+def post_auto_predict_stop():
+    """Stop the background watcher."""
+    global _auto_predict_active
+    with _auto_predict_lock:
+        _auto_predict_active = False
+        _auto_predict_stop.set()
+    return jsonify({"ok": True, "message": "Auto-predict watcher stopped."})
+
+
+@app.get("/api/auto_predict/result")
+def get_auto_predict_result():
+    """Return the most recent NN result from the background watcher."""
+    with _auto_predict_lock:
+        active = _auto_predict_active
+        result = _auto_predict_result
+    if result is None:
+        return jsonify({"ok": False, "pending": True, "active": active,
+                        "message": "No result yet."})
+    return jsonify({**result, "pending": False, "active": active})
 
 
 if __name__ == "__main__":

@@ -72,15 +72,15 @@ class NeuralNetwork:
     def train_step(self, X: np.ndarray, y: np.ndarray) -> None:
         X = self._norm(X)
 
-        z1 = X  @ self.W1 + self.b1
+        z1 = X @ self.W1 + self.b1
         a1 = self._relu(z1)
         mask1 = (np.random.rand(*a1.shape) > self.dropout_rate).astype(float)
-        a1 *= mask1
+        a1 *= mask1 / (1 - self.dropout_rate)
 
         z2 = a1 @ self.W2 + self.b2
         a2 = self._relu(z2)
         mask2 = (np.random.rand(*a2.shape) > self.dropout_rate).astype(float)
-        a2 *= mask2
+        a2 *= mask2 / (1 - self.dropout_rate)
 
         out = self._softmax(a2 @ self.W3 + self.b3)
 
@@ -89,13 +89,11 @@ class NeuralNetwork:
         dW3 = a2.T @ d3
         db3 = np.sum(d3, axis=0, keepdims=True)
 
-        d2 = (d3 @ self.W3.T) * mask2 * self._relu_grad(z2)
-
+        d2 = (d3 @ self.W3.T) * (mask2 / (1 - self.dropout_rate)) * self._relu_grad(z2)
         dW2 = a1.T @ d2
         db2 = np.sum(d2, axis=0, keepdims=True)
 
-        d1 = (d2 @ self.W2.T) * mask1 * self._relu_grad(z1)
-
+        d1 = (d2 @ self.W2.T) * (mask1 / (1 - self.dropout_rate)) * self._relu_grad(z1)
         dW1 = X.T @ d1
         db1 = np.sum(d1, axis=0, keepdims=True)
 
