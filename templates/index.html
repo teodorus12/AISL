@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bar brez ovir</title>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --card: #ffffff;
+      --ink: #221b14;
+      --muted: #6f6256;
+      --accent: #8b4a22;
+      --accent-dark: #5f3218;
+      --soft: #f7e6d6;
+      --border: #ead8c6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(135deg, #fff8ef 0%, var(--bg) 55%, #ead8c6 100%);
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+    }
+
+    button:hover { background: var(--accent-dark); }
+
+    input, select {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      min-width: 240px;
+      background: white;
+    }
+
+    .page {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 44px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .secondary {
+      background: white;
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+
+    .secondary:hover {
+      background: var(--soft);
+      color: var(--accent-dark);
+    }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .hero {
+      min-height: 68vh;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .hero-card {
+      width: min(820px, 100%);
+      padding: 42px;
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: 0 18px 50px rgba(92, 52, 20, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+    }
+
+    .hero h1 {
+      margin: 0 0 12px;
+      font-size: clamp(34px, 6vw, 64px);
+    }
+
+    .hero p {
+      margin: 0 auto 28px;
+      max-width: 680px;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .choice-card {
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: white;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .choice-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(92, 52, 20, 0.14);
+    }
+
+    .choice-card h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .choice-card p {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 12px 34px rgba(92, 52, 20, 0.10);
+      margin-bottom: 18px;
+    }
+
+    .bar-header {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .bar-title h1 {
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4vw, 52px);
+    }
+
+    .bar-title p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .menu-card {
+      background: var(--soft);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .menu-card h2 {
+      margin: 0 0 12px;
+    }
+
+    .menu-items {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .menu-item {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .bar-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    #result, #audioResult, #videoResult {
+      margin: 12px 0;
+      font-weight: 800;
+    }
+
+    #audioResult {
+      font-size: 24px;
+      color: var(--accent-dark);
+    }
+
+    #log {
+      border: 1px solid #ccc;
+      background: #f7f7f7;
+      padding: 10px;
+      height: 320px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-family: Consolas, monospace;
+      font-size: 13px;
+    }
+
+    #signVideo, #cameraPreview {
+      width: 100%;
+      max-width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #000;
+    }
+
+    #signVideo { display: none; }
+
+    .hint {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 800px) {
+      .choice-grid, .bar-header, .bar-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <div class="brand">AISL Demo</div>
+      <div class="nav-actions">
+        <button class="secondary" onclick="showSection('home')">Domov</button>
+        <button class="secondary" onclick="showSection('stm')">STM32 service control</button>
+        <button onclick="showSection('bar')">Bar brez ovir</button>
+      </div>
+    </div>
+
+    <section id="homeSection" class="section active">
+      <div class="hero">
+        <div class="hero-card">
+          <h1>Izberi način demonstracije</h1>
+          <p>
+            Projekt združuje storitev za STM32 in demonstracijo dostopnega avtonomnega
+            naročanja v baru za uporabnike z različnimi načini komunikacije.
+          </p>
+          <div class="choice-grid">
+            <div class="choice-card" onclick="showSection('stm')">
+              <h2>STM32 service control</h2>
+              <p>Upravljanje STM32 storitve, status povezave, prenos in brisanje datotek.</p>
+            </div>
+            <div class="choice-card" onclick="showSection('bar')">
+              <h2>Bar brez ovir</h2>
+              <p>Avtonomno naročanje: prepoznava govora in znakovnega jezika za 5 izdelkov.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="stmSection" class="section">
+      <div class="panel">
+        <h1>STM32 Service Control</h1>
+        <p>Localhost UI for TCP service on <code>127.0.0.1:5000</code>.</p>
+
+        <div class="row">
+          <button onclick="sendAction('STATUS')">STATUS</button>
+          <button onclick="sendAction('GET_ALL')">GET_ALL</button>
+          <button onclick="sendAction('GET_LAST')">GET_LAST</button>
+          <button onclick="sendAction('DELETE')">DELETE</button>
+        </div>
+
+        <div class="row">
+          <input id="filename" placeholder="LOG001.BIN">
+          <button onclick="sendGetFile()">GET_FILE</button>
+        </div>
+
+        <div id="result">Ready.</div>
+        <h3>Service Log</h3>
+        <div id="log"></div>
+      </div>
+    </section>
+
+    <section id="barSection" class="section">
+      <div class="bar-header panel">
+        <div class="bar-title">
+          <h1>Bar brez ovir</h1>
+          <p>
+            Avtonomni bar omogoča naročanje petih izdelkov. Sistem je prilagojen tudi
+            uporabnikom, ki naročilo oddajo z govorom ali znakovnim jezikom.
+          </p>
+        </div>
+        <div class="menu-card">
+          <h2>Meni</h2>
+          <div class="menu-items">
+            <div class="menu-item">Kava</div>
+            <div class="menu-item">Čaj</div>
+            <div class="menu-item">Sok</div>
+            <div class="menu-item">Pivo</div>
+            <div class="menu-item">Vino</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bar-grid">
+        <div class="panel">
+          <h2>Govor v naročilo</h2>
+          <p class="hint">Izberi zvočno datoteko. Sistem prepozna naročilo in prikaže potrditveni video.</p>
+          <div class="row">
+            <select id="audioFileSelect"></select>
+            <button class="secondary" onclick="loadAudioFiles()">Osveži datoteke</button>
+            <button onclick="predictAudio()">Prepoznaj naročilo</button>
+          </div>
+          <div id="audioResult">Naročilo še ni prepoznano.</div>
+          <video id="signVideo" controls></video>
+        </div>
+
+        <div class="panel">
+          <h2>Znakovni jezik</h2>
+          <p class="hint">Kamera prikazuje uporabnika in sproti izpisuje trenutno prepoznan znak.</p>
+          <div class="row">
+            <button onclick="startVideoRecognition()">Začni kamero</button>
+            <button class="secondary" onclick="stopVideoRecognition()">Ustavi kamero</button>
+          </div>
+          <video id="cameraPreview" autoplay muted playsinline></video>
+          <div id="videoResult">Video prepoznava še ni zagnana.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let videoStream = null;
+    let predictTimer = null;
+    let predictInFlight = false;
+
+    function showSection(section) {
+      document.getElementById("homeSection").classList.toggle("active", section === "home");
+      document.getElementById("stmSection").classList.toggle("active", section === "stm");
+      document.getElementById("barSection").classList.toggle("active", section === "bar");
+      if (section !== "bar") {
+        stopVideoRecognition();
+      }
+    }
+
+    async function sendAction(action, filename = "") {
+      const response = await fetch("/api/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, filename })
+      });
+      const data = await response.json();
+      const status = data.ok ? "OK" : "FAIL";
+      document.getElementById("result").textContent = `${status}: ${data.message}`;
+      await refreshLog();
+    }
+
+    async function sendGetFile() {
+      const filename = document.getElementById("filename").value.trim();
+      if (!filename) {
+        document.getElementById("result").textContent = "FAIL: Filename is required for GET_FILE.";
+        return;
+      }
+      await sendAction("GET_FILE", filename);
+    }
+
+    async function refreshLog() {
+      const response = await fetch("/api/log");
+      const data = await response.json();
+      const log = document.getElementById("log");
+      log.textContent = (data.lines || []).join("\n");
+      log.scrollTop = log.scrollHeight;
+    }
+
+    setInterval(refreshLog, 1500);
+    refreshLog();
+
+    async function loadAudioFiles() {
+      const response = await fetch("/api/audio/files");
+      const data = await response.json();
+      const select = document.getElementById("audioFileSelect");
+      select.innerHTML = "";
+
+      if (!data.ok) {
+        document.getElementById("audioResult").textContent = `Napaka: ${data.message}`;
+        return;
+      }
+
+      const files = data.files || [];
+      if (!files.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Ni WAV datotek v testing_data";
+        select.appendChild(option);
+        return;
+      }
+
+      for (const file of files) {
+        const option = document.createElement("option");
+        option.value = file;
+        option.textContent = file;
+        select.appendChild(option);
+      }
+    }
+
+    async function predictAudio() {
+      const filename = document.getElementById("audioFileSelect").value;
+      if (!filename) {
+        document.getElementById("audioResult").textContent = "Napaka: izberi WAV datoteko.";
+        return;
+      }
+
+      const response = await fetch("/api/audio/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename })
+      });
+      const data = await response.json();
+
+      if (!data.ok) {
+        document.getElementById("audioResult").textContent = `Napaka: ${data.message}`;
+        return;
+      }
+
+      const pct = Math.round((data.confidence || 0) * 100);
+      const missing = (data.missing_letters || []).join(", ");
+      const suffix = missing ? ` | Missing: ${missing}` : "";
+      document.getElementById("audioResult").textContent =
+        `Naročili ste "${String(data.word).toUpperCase()}" (${pct}%)${suffix}`;
+
+      const signVideo = document.getElementById("signVideo");
+      const preferredVideo = data.word_video || ((data.videos && data.videos.length > 0) ? data.videos[0] : "");
+      if (preferredVideo) {
+        const sourceChanged = signVideo.src !== new URL(preferredVideo, window.location.origin).href;
+        if (sourceChanged) {
+          signVideo.src = preferredVideo;
+        }
+        signVideo.style.display = "block";
+        signVideo.currentTime = 0;
+        try {
+          await signVideo.play();
+        } catch (err) {
+          // Some browsers block autoplay with audio. Controls remain available as fallback.
+        }
+      } else {
+        signVideo.removeAttribute("src");
+        signVideo.style.display = "none";
+      }
+    }
+
+    async function startVideoRecognition() {
+      if (videoStream) return;
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      } catch (err) {
+        document.getElementById("videoResult").textContent = `Napaka kamere: ${err.message}`;
+        return;
+      }
+
+      const preview = document.getElementById("cameraPreview");
+      preview.srcObject = videoStream;
+      predictTimer = setInterval(sendVideoFrame, 700);
+      document.getElementById("videoResult").textContent = "Kamera je zagnana...";
+    }
+
+    function stopVideoRecognition() {
+      if (predictTimer) {
+        clearInterval(predictTimer);
+        predictTimer = null;
+      }
+      if (videoStream) {
+        for (const track of videoStream.getTracks()) {
+          track.stop();
+        }
+        videoStream = null;
+      }
+      const preview = document.getElementById("cameraPreview");
+      preview.srcObject = null;
+      document.getElementById("videoResult").textContent = "Video prepoznava je ustavljena.";
+    }
+
+    async function sendVideoFrame() {
+      if (predictInFlight) return;
+      if (!videoStream) return;
+
+      const preview = document.getElementById("cameraPreview");
+      if (!preview.videoWidth || !preview.videoHeight) return;
+
+      predictInFlight = true;
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = preview.videoWidth;
+        canvas.height = preview.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(preview, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL("image/jpeg", 0.75);
+
+        const response = await fetch("/api/video/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageData })
+        });
+        const data = await response.json();
+
+        if (!data.ok) {
+          document.getElementById("videoResult").textContent = `Napaka: ${data.message}`;
+          return;
+        }
+
+        const pct = Math.round((data.confidence || 0) * 100);
+        document.getElementById("videoResult").textContent = `Trenutno prepoznano: ${data.label} (${pct}%)`;
+      } finally {
+        predictInFlight = false;
+      }
+    }
+
+    loadAudioFiles();
+  </script>
+</body>
+</html>

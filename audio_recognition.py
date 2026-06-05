@@ -146,7 +146,7 @@ class NeuralNetwork:
 
 class AudioProcessor:
 
-    def __init__(self, n_mfcc: int = 20, sr: int = 8000, duration: float = 1.0):
+    def __init__(self, n_mfcc: int = 20, sr: int = 16000, duration: float = 1.0):
         self.n_mfcc   = n_mfcc
         self.sr       = sr
         self.max_len  = int(sr * duration)
@@ -164,7 +164,17 @@ class AudioProcessor:
         delta1  = librosa.feature.delta(mfcc)
         delta2  = librosa.feature.delta(mfcc, order=2)
         chroma  = librosa.feature.chroma_stft(y=y, sr=sr)
-        contrast= librosa.feature.spectral_contrast(y=y, sr=sr)
+        #contrast= librosa.feature.spectral_contrast(y=y, sr=sr)
+        try:
+            contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
+        except Exception as e:
+            if "Nyquist" not in str(e):
+                raise
+
+            # Compatibility fallback for newer librosa at low sample rates.
+            contrast = librosa.feature.spectral_contrast(y=y, sr=sr, n_bands=5, fmin=120.0)
+            if contrast.shape[0] < 7:
+                contrast = np.pad(contrast, ((0, 7 - contrast.shape[0]), (0, 0)), mode="constant")
         zcr     = librosa.feature.zero_crossing_rate(y)
         rms     = librosa.feature.rms(y=y)
 
