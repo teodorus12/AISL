@@ -1,15 +1,22 @@
+from __future__ import annotations
+
+import re
 import serial
 import time
 
 from errors import SerialConnectionError, TransferError
 
-def list_command():
+
+def list_files(port: str | None) -> list[str]:
+    if not port:
+        raise SerialConnectionError("STM32 is not connected.")
+
     try:
-        with serial.Serial('COM5', 9600, timeout=4) as ser:
+        with serial.Serial(port, 9600, timeout=4) as ser:
             time.sleep(2)
 
-            command = "LIST" + '\n'
-            print(command)
+            command = "LIST\n"
+            print(command.strip())
 
             max_retries = 4
             attempt = 0
@@ -30,26 +37,40 @@ def list_command():
             if attempt >= max_retries:
                 raise TransferError("Device did not accept LIST command (unknown command).")
 
-            read_any = False
-            # Print incoming data instead of saving to file
+            payload = bytearray()
             while True:
                 data = ser.read(1024)
                 if not data:
                     break
-                read_any = True
+                payload.extend(data)
 
-                # Option 1: raw bytes
-                print(data)
+            if not payload:
+                return []
 
-                # Option 2 (cleaner): hex format
-                # print(data.hex())
+            text = payload.decode(errors="ignore")
+            names = re.findall(r"[A-Za-z0-9_.-]+\.BIN", text, flags=re.IGNORECASE)
+            unique_names: list[str] = []
+            seen: set[str] = set()
+            for name in names:
+                normalized = name.strip()
+                key = normalized.lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                unique_names.append(normalized)
 
-                # Option 3 (if it's text):
-                # print(data.decode(errors="ignore"), end="")
-
-            if not read_any:
-                raise TransferError("No data received (timeout).")
-
-            print("Prenos končan")
+            return unique_names
     except serial.SerialException as e:
-        raise SerialConnectionError(f"Failed to open serial port COM5: {e}") from e
+        raise SerialConnectionError(f"Failed to open serial port {port}: {e}") from e
+
+
+def list_command(port: str | None):
+    names = list_files(port)
+    if not names:
+        print("No files found on STM32.")
+        return
+
+    for name in names:
+        print(name)
+
+    print("Prenos končan")

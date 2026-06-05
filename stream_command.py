@@ -1,12 +1,14 @@
 import serial
 import time
-import sys
 
 from errors import SerialConnectionError, TransferError
 
-def STREAM():
+def STREAM(port: str | None):
+    if not port:
+        raise SerialConnectionError("STM32 is not connected.")
+
     try:
-        with serial.Serial('COM5', 9600, timeout=4) as ser:
+        with serial.Serial(port, 9600, timeout=4) as ser:
             time.sleep(2)
 
             command = "STREAM" +'\n'
@@ -46,4 +48,4 @@ def STREAM():
 
             print("Prenos končan")
     except serial.SerialException as e:
-        raise SerialConnectionError(f"Failed to open serial port COM5: {e}") from e
+        raise SerialConnectionError(f"Failed to open serial port {port}: {e}") from e

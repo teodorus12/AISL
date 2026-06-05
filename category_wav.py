@@ -6,6 +6,7 @@ from pathlib import Path
 from convert_bin_to_wav import convert_file
 from errors import UserInputError
 from get_file import GET_FILE
+from stm32_detector import find_stm32_port
 
 BIN_FOLDER = "bin_folder"
 
@@ -51,7 +52,8 @@ def download_bin_and_convert_by_category() -> Path:
     if not filename:
         raise UserInputError("Ime datoteke ne sme biti prazno.")
 
-    GET_FILE(filename)
+    port = find_stm32_port()
+    GET_FILE(filename, port)
 
     bin_path = Path(BIN_FOLDER) / filename
     if not bin_path.is_file():
