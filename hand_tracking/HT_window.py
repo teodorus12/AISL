@@ -20,6 +20,17 @@ class MainWindow:
         self.left = tk.Frame(self.container)
         self.left.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
         self.video_panel = VPanel(self.left)
+        
+        self.text_area = tk.Frame(self.left)
+        self.text = tk.StringVar(value="")
+        self.text_var = tk.StringVar(value="Trenutno besedilo:")
+        tk.Label(self.left, textvariable=self.text_var, justify="center").pack(pady=8, padx=8)
+
+        tk.Button(self.left, text="CLEAR - Text", command=self.clear_text(),
+        ).pack(pady=1)
+        tk.Button(self.left, text="CLEAR - last letter", command=self.clear_previous_letter,
+        ).pack(pady=1)
+
 
         self.right = tk.Frame(self.container, width=SIDEBAR_WIDTH, bg="#f5f5f5")
         self.right.grid(row=0, column=1, sticky="ns")
@@ -70,6 +81,33 @@ class MainWindow:
         v = lbl.upper()
         if v:
             self.lbl_var.set(f"Trenutni znak: {v.upper()}")
+            
+    def set_text(self, lbl):
+        v = lbl.upper()
+        if v:
+            self.text_var.set(f"Trenutno besedilo: {v}")
+            
+    def build_text(self, letter):
+        curr_text = self.text.get()
+        if letter == "?":
+            return
+        if not curr_text or curr_text[-1] != letter:
+            text = self.text.get() + letter
+            self.text.set(text)
+            self.set_text(text)
+        
+    def clear_text(self):
+        self.text.set("")
+        self.text_var.set(f"Trenutno besedilo: ")
+        
+    def clear_previous_letter(self):
+        curr_text = self.text.get()
+    
+        if curr_text:
+            text = curr_text[:-1]
+            self.text.set(text)
+            self.set_text(text)
+        
 
     def update_video(self, frame):
         self.video_panel.update(frame)
