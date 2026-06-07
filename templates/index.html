@@ -352,16 +352,26 @@
           <video id="signVideo" controls></video>
         </div>
 
-        <div class="panel">
-          <h2>Znakovni jezik</h2>
-          <p class="hint">Kamera prikazuje uporabnika in sproti izpisuje trenutno prepoznan znak.</p>
+        <div class="panel" id="autoPredictPanel">
+          <h2>Samodejno naročilo s STM32</h2>
           <div class="row">
-            <button onclick="startVideoRecognition()">Začni kamero</button>
-            <button class="secondary" onclick="stopVideoRecognition()">Ustavi kamero</button>
+            <button onclick="fetchAndPredict()">▶ Prenesi zadnjo &amp; prepoznaj</button>
           </div>
-          <video id="cameraPreview" autoplay muted playsinline></video>
-          <div id="videoResult">Video prepoznava še ni zagnana.</div>
+          <div id="autoStatus" style="color:var(--muted);font-size:14px;margin:6px 0;">Čakam na ukaz…</div>
+          <div id="autoResult" style="font-size:24px;font-weight:800;color:var(--accent-dark);margin:8px 0;"></div>
+          <video id="autoSignVideo" controls style="display:none;width:100%;max-width:100%;border:1px solid var(--border);border-radius:16px;background:#000;"></video>
         </div>
+      </div>
+
+      <div class="panel">
+        <h2>Znakovni jezik</h2>
+        <p class="hint">Kamera prikazuje uporabnika in sproti izpisuje trenutno prepoznan znak.</p>
+        <div class="row">
+          <button onclick="startVideoRecognition()">Začni kamero</button>
+          <button class="secondary" onclick="stopVideoRecognition()">Ustavi kamero</button>
+        </div>
+        <video id="cameraPreview" autoplay muted playsinline></video>
+        <div id="videoResult">Video prepoznava še ni zagnana.</div>
       </div>
     </section>
   </main>
@@ -477,7 +487,6 @@
         try {
           await signVideo.play();
         } catch (err) {
-          // Some browsers block autoplay with audio. Controls remain available as fallback.
         }
       } else {
         signVideo.removeAttribute("src");
@@ -552,6 +561,69 @@
     }
 
     loadAudioFiles();
+
+    function showAutoResult(data) {
+      const resultEl = document.getElementById("autoResult");
+      const videoEl  = document.getElementById("autoSignVideo");
+      const statusEl = document.getElementById("autoStatus");
+
+      if (!data.ok) {
+        resultEl.textContent = `Napaka: ${data.message}`;
+        videoEl.style.display = "none";
+        return;
+      }
+
+      const pct = Math.round((data.confidence || 0) * 100);
+      const missing = (data.missing_letters || []).join(", ");
+      const suffix = missing ? ` | Manjka: ${missing}` : "";
+      resultEl.textContent = `Naročili ste "${String(data.word).toUpperCase()}" (${pct}%)${suffix}`;
+      if (data.source_file) statusEl.textContent = `Datoteka: ${data.source_file}`;
+
+      const preferred = data.word_video || ((data.videos && data.videos.length) ? data.videos[0] : "");
+      if (preferred) {
+        const abs = new URL(preferred, window.location.origin).href;
+        if (videoEl.src !== abs) videoEl.src = preferred;
+        videoEl.style.display = "block";
+        videoEl.currentTime = 0;
+        videoEl.play().catch(() => {});
+      } else {
+        videoEl.removeAttribute("src");
+        videoEl.style.display = "none";
+      }
+    }
+
+    async function fetchAndPredict() {
+      document.getElementById("autoStatus").textContent = "Prenašam zadnjo datoteko s STM32…";
+      document.getElementById("autoResult").textContent = "";
+      try {
+        const resp = await fetch("/api/auto_predict/fetch_and_run", { method: "POST" });
+        const data = await resp.json();
+        document.getElementById("autoStatus").textContent = data.ok
+          ? "Prepoznava uspešna."
+          : "Napaka pri prenosu ali prepoznavi.";
+        showAutoResult(data);
+        loadAudioFiles();
+      } catch (err) {
+        document.getElementById("autoStatus").textContent = `Napaka: ${err.message}`;
+      }
+    }
+
+    async function pollWatchResult() {
+      try {
+        const resp = await fetch("/api/auto_predict/result");
+        const data = await resp.json();
+        if (!data.pending && data.ok) {
+          document.getElementById("autoStatus").textContent =
+            `Opazovalnik aktiven · zadnja prepoznava: ${data.source_file || ""}`;
+          showAutoResult(data);
+          loadAudioFiles();
+        } else if (!data.pending && !data.ok && !data.active) {
+          document.getElementById("autoStatus").textContent = `Napaka opazovalnika: ${data.message}`;
+        }
+      } catch (_) { 
+        
+       }
+    }
   </script>
 </body>
 </html>
