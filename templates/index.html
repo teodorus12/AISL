@@ -160,36 +160,48 @@
     }
 
     .bar-header {
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 18px;
-      align-items: stretch;
+      display: block;
+      padding: 0;
+      overflow: hidden;
     }
 
-    .bar-title h1 {
-      margin: 0 0 10px;
-      font-size: clamp(30px, 4vw, 52px);
+    .bar-shop-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 20px 24px 12px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .bar-title p {
-      color: var(--muted);
-      line-height: 1.5;
+    .bar-shop-banner h1 {
       margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
     }
 
-    .menu-card {
+    .bar-shop-banner p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.45;
+    }
+
+    .bar-menu-top {
       background: var(--soft);
-      border-radius: 18px;
-      padding: 18px;
+      padding: 14px 16px 18px;
     }
 
-    .menu-card h2 {
-      margin: 0 0 12px;
+    .bar-menu-top h2 {
+      margin: 0 0 10px 4px;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      color: var(--accent-dark);
     }
 
     .menu-items {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 10px;
     }
 
@@ -197,10 +209,32 @@
       background: white;
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 12px;
+      padding: 16px 10px;
       font-weight: 800;
       text-transform: uppercase;
       text-align: center;
+      font-size: clamp(13px, 2vw, 16px);
+      transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    }
+
+    .menu-item.active {
+      background: #d4a574;
+      color: white;
+      border-color: #b8844f;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(92, 52, 20, 0.18);
+    }
+
+    .order-ticket {
+      margin-top: 12px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: var(--soft);
+      border: 1px dashed var(--border);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent-dark);
+      min-height: 52px;
     }
 
     .bar-grid {
@@ -256,8 +290,11 @@
     }
 
     @media (max-width: 800px) {
-      .choice-grid, .bar-header, .bar-grid {
+      .choice-grid, .bar-grid {
         grid-template-columns: 1fr;
+      }
+      .menu-items {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
   </style>
@@ -319,30 +356,34 @@
     </section>
 
     <section id="barSection" class="section">
-      <div class="bar-header panel">
-        <div class="bar-title">
-          <h1>Bar brez ovir</h1>
-          <p>
-            Avtonomni bar omogoča naročanje petih izdelkov. Sistem je prilagojen tudi
-            uporabnikom, ki naročilo oddajo z govorom ali znakovnim jezikom.
-          </p>
-        </div>
-        <div class="menu-card">
-          <h2>Meni</h2>
-          <div class="menu-items">
-            <div class="menu-item">Kava</div>
-            <div class="menu-item">Čaj</div>
-            <div class="menu-item">Sok</div>
-            <div class="menu-item">Pivo</div>
-            <div class="menu-item">Vino</div>
+      <div class="panel bar-header">
+        <div class="bar-shop-banner">
+          <div>
+            <h1>Bar brez ovir</h1>
+            <p>Oddaj naročilo z govornim posnetkom ali znakovnim jezikom. Sistem ga primerja z menijem spodaj.</p>
           </div>
         </div>
+        <div class="bar-menu-top">
+          <h2>MENI</h2>
+          <div class="menu-items">
+            <div class="menu-item" data-product="kava">Kava</div>
+            <div class="menu-item" data-product="caj">Čaj</div>
+            <div class="menu-item" data-product="sok">Sok</div>
+            <div class="menu-item" data-product="pivo">Pivo</div>
+            <div class="menu-item" data-product="vino">Vino</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Vaše naročilo</h2>
+        <div id="orderTicket" class="order-ticket">Naročilo še ni potrjeno.</div>
       </div>
 
       <div class="bar-grid">
         <div class="panel">
           <h2>Govor v naročilo</h2>
-          <p class="hint">Izberi zvočno datoteko. Sistem prepozna naročilo in prikaže potrditveni video.</p>
+          <p class="hint">Izberi zvočno datoteko. Sistem prepozna naročilo in označi ustrezen artikel v meniju.</p>
           <div class="row">
             <select id="audioFileSelect"></select>
             <button class="secondary" onclick="loadAudioFiles()">Osveži datoteke</button>
@@ -380,6 +421,29 @@
     let videoStream = null;
     let predictTimer = null;
     let predictInFlight = false;
+
+    const MENU_PRODUCTS = ["kava", "caj", "sok", "pivo", "vino"];
+
+    function normalizeProductKey(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+    }
+
+    function highlightMenuProduct(word) {
+      const key = normalizeProductKey(word);
+      document.querySelectorAll(".menu-item").forEach((el) => {
+        const product = el.getAttribute("data-product") || "";
+        el.classList.toggle("active", key.includes(product) || product.includes(key));
+      });
+    }
+
+    function setOrderTicket(text) {
+      const ticket = document.getElementById("orderTicket");
+      if (ticket) ticket.textContent = text;
+    }
 
     function showSection(section) {
       document.getElementById("homeSection").classList.toggle("active", section === "home");
@@ -471,9 +535,11 @@
 
       const pct = Math.round((data.confidence || 0) * 100);
       const missing = (data.missing_letters || []).join(", ");
-      const suffix = missing ? ` | Missing: ${missing}` : "";
-      document.getElementById("audioResult").textContent =
-        `Naročili ste "${String(data.word).toUpperCase()}" (${pct}%)${suffix}`;
+      const suffix = missing ? ` | Manjka: ${missing}` : "";
+      const orderText = `Naročili ste "${String(data.word).toUpperCase()}" (${pct}%)${suffix}`;
+      document.getElementById("audioResult").textContent = orderText;
+      setOrderTicket(orderText);
+      highlightMenuProduct(data.word);
 
       const signVideo = document.getElementById("signVideo");
       const preferredVideo = data.word_video || ((data.videos && data.videos.length > 0) ? data.videos[0] : "");
@@ -577,6 +643,8 @@
       const missing = (data.missing_letters || []).join(", ");
       const suffix = missing ? ` | Manjka: ${missing}` : "";
       resultEl.textContent = `Naročili ste "${String(data.word).toUpperCase()}" (${pct}%)${suffix}`;
+      setOrderTicket(resultEl.textContent);
+      highlightMenuProduct(data.word);
       if (data.source_file) statusEl.textContent = `Datoteka: ${data.source_file}`;
 
       const preferred = data.word_video || ((data.videos && data.videos.length) ? data.videos[0] : "");
