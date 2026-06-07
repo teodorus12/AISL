@@ -84,7 +84,7 @@ class HandTrackingApp:
 
                 label, conf = self.recogniser.predict(f_data)
                 self.window.set_prediction(label, conf)
-
+                self.window.build_text(label)
                 self.recorder.add_frame_data(f_data)
             else:
                 self.recogniser.reset()
