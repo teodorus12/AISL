@@ -255,6 +255,16 @@
       margin-top: 8px;
     }
 
+    .text-display-box {
+      background: var(--soft);
+      border: 2px dashed var(--accent);
+      border-radius: 14px;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--accent-dark);
+      text-align: center;
+      margin: 14px 0;
+    }
     @media (max-width: 800px) {
       .choice-grid, .bar-header, .bar-grid {
         grid-template-columns: 1fr;
@@ -370,6 +380,11 @@
           <button onclick="startVideoRecognition()">Začni kamero</button>
           <button class="secondary" onclick="stopVideoRecognition()">Ustavi kamero</button>
         </div>
+        <div class="row">
+          <button class="secondary" onclick="clearText()">CLEAR - Text</button>
+          <button class="secondary" onclick="clearPreviousLetter()">CLEAR - last letter</button>
+        </div>
+        <div id="textVarDisplay" class="text-display-box" style="padding: 1rem 0 1rem 0;">Trenutno besedilo: </div>
         <video id="cameraPreview" autoplay muted playsinline></video>
         <div id="videoResult">Video prepoznava še ni zagnana.</div>
       </div>
@@ -380,6 +395,7 @@
     let videoStream = null;
     let predictTimer = null;
     let predictInFlight = false;
+    let curr_text = "";
 
     function showSection(section) {
       document.getElementById("homeSection").classList.toggle("active", section === "home");
@@ -525,6 +541,44 @@
       document.getElementById("videoResult").textContent = "Video prepoznava je ustavljena.";
     }
 
+    function setText(lbl) {
+      const v = lbl.toUpperCase();
+      const line = document.getElementById("textVarDisplay");
+      if (v) {
+        line.textContent = `Trenutno besedilo: ${v}`;
+      } else {
+        line.textContent = "Trenutno besedilo: ";
+      }
+    }
+
+    function buildtext(letter) {
+      if (!letter) {
+        return;
+      }
+      const letr = String(letter).trim();
+
+      if (letr === '?' || letr.toLowerCase() === 'nothing' || letr.toLowerCase() === 'none') {
+        return;
+      }
+      if (!curr_text || curr_text.slice(-1) !== letr) {
+        curr_text += letr;
+        setText(curr_text);
+      }
+    }
+    function clearText() {
+      curr_text = "";
+      setText(curr_text)
+    }
+
+    function clearPreviousLetter() {
+      if (curr_text) {
+        curr_text = curr_text.slice(0, -1);
+        setText(curr_text);
+      }
+    }
+
+
+
     async function sendVideoFrame() {
       if (predictInFlight) return;
       if (!videoStream) return;
@@ -555,6 +609,12 @@
 
         const pct = Math.round((data.confidence || 0) * 100);
         document.getElementById("videoResult").textContent = `Trenutno prepoznano: ${data.label} (${pct}%)`;
+      
+        if (data.label) {
+          buildtext(data.label)
+        }
+      
+      
       } finally {
         predictInFlight = false;
       }
