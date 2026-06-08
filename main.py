@@ -9,6 +9,7 @@ from category_wav import download_bin_and_convert_by_category
 from sign_videos import recognize_and_play_signs
 from tests_for_ai import test_audio_ai
 from hand_tracking.HT_main import HT_startup
+from bar_demo_gui import bar_demo_startup
 from stm32_detector import find_stm32_port
 
 import os
@@ -32,6 +33,7 @@ def print_HELP():
     print("12. Start hand tracking software")
     print("13. detect STM32")
     print("14. EXIT")
+    print("15. Start bar demo (video + audio)")
 
 
 def print_stm32_status() -> str | None:
@@ -100,6 +102,9 @@ if __name__ == "__main__":
 
             elif variable == "14":
                 break
+
+            elif variable == "15":
+                bar_demo_startup()
             
             else:
                 raise UserInputError("invalid command")
