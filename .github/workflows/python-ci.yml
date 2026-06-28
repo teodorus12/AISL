@@ -1,0 +1,32 @@
+name: Python CI
+
+on:
+  push:
+    branches:
+    - main
+    - dev
+    - feature/github-actions-CI
+
+  pull_requests:
+    branches:
+     - main
+     - dev
+
+join:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    
+      - uses: actions/checkout@v4
+        with:
+          python-version: "3.11"
+
+      - name: install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy pyserial matplotlib librosa opencv-python mediapipe pillow
+
+      - name: Compile Python files
+        run: |
+          python -m compileall . 
